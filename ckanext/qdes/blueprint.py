@@ -32,6 +32,9 @@ def dashboard_review_datasets():
         try:
             data = clean_dict(dict_fns.unflatten(tuplize_dict(parse_params(request.form))))
 
+            if not type(data['dataset']) is list:
+                data['dataset'] = list([data['dataset']])
+
             for package_id in data['dataset']:
                 package_dict = get_action('package_show')({}, {'id': package_id})
                 package_dict['metadata_review_date'] = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')
@@ -44,7 +47,6 @@ def dashboard_review_datasets():
 
         return h.redirect_to('/dashboard/review-datasets')
 
-    # @todo, need to filter current user org is not sys_admin, and force to load current user's org
     org_id = request.args.get('org_id', None)
 
     extra_vars = {

@@ -1,7 +1,7 @@
 import logging
 import time
 
-from sqlalchemy import func, asc
+from sqlalchemy import cast, asc, DateTime
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from ckan.plugins.toolkit import config
@@ -34,22 +34,22 @@ def qdes_organization_list(user_id=None):
 
 
 def qdes_get_dataset_review_period():
-    return config.get('ckanext.qdes_schema.dataset_review_period', 12)
+    return config.get('ckanext.qdes_schema.dataset_review_period', 1)
 
 
 def qdes_review_datasets(org_id=None):
     u"""
     Return a list of dataset that need to be reviewed.
     """
-    dataset_review_period = qdes_get_dataset_review_period()
+    query = Session.query(Package).join(PackageExtra)
 
-    query = Session.query(Package).join(PackageExtra).order_by(asc(PackageExtra.value))
-
-    # @todo, need to fix the filter.
     # Filter by metadata review date.
-    start_time = datetime.utcnow() - relativedelta(months=dataset_review_period)
-    query = query.filter(PackageExtra.key == 'metadata_review_date')
-    #     .filter(datetime.strptime(PackageExtra.value, '%Y-%m-%dT%H:%M:%S').timestamp() <= start_time.timestamp())
+    # dataset_review_period = qdes_get_dataset_review_period()
+    # start_time = datetime.utcnow() - relativedelta(months=dataset_review_period)
+    # query = query.filter(PackageExtra.key == 'metadata_review_date') \
+    #     .filter(cast(PackageExtra.value, DateTime) <= start_time) \
+    #     .order_by(asc(PackageExtra.value))#
+    query = query.filter(PackageExtra.key == 'metadata_review_date').order_by(asc(PackageExtra.value))
 
     # Filter by organisations.
     admin_org = g.userobj.get_groups('organization', 'admin')
@@ -77,7 +77,5 @@ def qdes_review_due_date(review_date):
     Return due from given date.
     """
     dataset_review_period = qdes_get_dataset_review_period()
-    # due_date = datetime.strptime(review_date, '%Y-%m-%dT%H:%M:%S') + relativedelta(month=dataset_review_period)
-    due_date = datetime.utcnow() + relativedelta(months=dataset_review_period)
-    log.error('dataset_review_period %s' % due_date)
+    due_date = datetime.strptime(review_date, '%Y-%m-%dT%H:%M:%S') + relativedelta(months=dataset_review_period)
     return due_date.strftime('%Y-%m-%dT%H:%M:%S')
