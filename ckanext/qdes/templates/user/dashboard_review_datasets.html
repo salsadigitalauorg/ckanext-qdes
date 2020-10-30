@@ -48,10 +48,10 @@
           {% set truncate_title = truncate_title or 80 %}
           {% set title = package.title or package.name %}
           {% set offset = h.render_datetime(package.extras.metadata_review_date, date_format='%z') %}
-          {% set review_date = h.render_datetime(package.extras.metadata_review_date, date_format='%Y-%m-%dT%H:%M:%S') ~ offset[:3] ~ ":" ~ offset[-2:] %}
+          {% set review_date = h.render_datetime(package.extras.metadata_review_date, date_format='%d %b %Y, %H:%M:%S') ~ ' (' ~ offset[:3] ~ ":" ~ offset[-2:] ~ ')' %}
           {% set due_date = h.qdes_review_due_date(package.extras.metadata_review_date) %}
           {% set due_date_offset = h.render_datetime(due_date, date_format='%z') %}
-          {% set due_date_formatted = h.render_datetime(due_date, date_format='%Y-%m-%dT%H:%M:%S') ~ due_date_offset[:3] ~ ":" ~ due_date_offset[-2:] %}
+          {% set due_date_formatted = h.render_datetime(due_date, date_format='%d %b %Y, %H:%M:%S') ~ ' (' ~ offset[:3] ~ ":" ~ offset[-2:] ~ ')' %}
         <tr>
             <td>
               <input type="checkbox" name="dataset" value="{{ package.id }}">
