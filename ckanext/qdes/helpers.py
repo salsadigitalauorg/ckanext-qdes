@@ -16,6 +16,10 @@ from pprint import pformat
 log = logging.getLogger(__name__)
 
 
+def utcnow_as_string():
+    return datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')
+
+
 def qdes_organization_list(user_id=None):
     u"""
     Return a list of organization, if user_id not empty, it will return the org belong to the user.
@@ -39,7 +43,7 @@ def qdes_get_dataset_review_period():
 
 def qdes_review_datasets(org_id=None):
     u"""
-    Return a list of dataset that need to be reviewed.
+    Return a list of datasets that need to be reviewed.
     """
     query = Session.query(Package).join(PackageExtra)
 
@@ -49,7 +53,10 @@ def qdes_review_datasets(org_id=None):
     # query = query.filter(PackageExtra.key == 'metadata_review_date') \
     #     .filter(cast(PackageExtra.value, DateTime) <= start_time) \
     #     .order_by(asc(PackageExtra.value))#
-    query = query.filter(PackageExtra.key == 'metadata_review_date').order_by(asc(PackageExtra.value))
+    query = query.filter(PackageExtra.key == 'metadata_review_date') \
+        .filter(PackageExtra.value != '') \
+        .filter(Package.state == 'active') \
+        .order_by(asc(PackageExtra.value))
 
     # Filter by organisations.
     admin_org = g.userobj.get_groups('organization', 'admin')

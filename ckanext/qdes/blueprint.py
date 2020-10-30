@@ -3,7 +3,6 @@ import ckan.plugins.toolkit as toolkit
 import ckan.lib.navl.dictization_functions as dict_fns
 import logging
 
-from datetime import datetime
 from ckan.lib.base import abort
 from ckan.common import g
 from flask import Blueprint
@@ -28,26 +27,29 @@ def dashboard_review_datasets():
     if not (g.userobj.sysadmin or admin_org or editor_org):
         abort(404, 'Not found')
 
-    if request.method == 'POST':
-        try:
-            data = clean_dict(dict_fns.unflatten(tuplize_dict(parse_params(request.form))))
-
-            if not type(data['dataset']) is list:
-                data['dataset'] = list([data['dataset']])
-
-            for package_id in data['dataset']:
-                package_dict = get_action('package_show')({}, {'id': package_id})
-                package_dict['metadata_review_date'] = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')
-                get_action('package_update')({}, package_dict)
-
-            h.flash_success('Dataset(s) marked as reviewed.')
-        except Exception as e:
-            log.error(str(e))
-            h.flash_error('Error updating dataset review date.')
-
-        return h.redirect_to('/dashboard/review-datasets')
-
     org_id = request.args.get('org_id', None)
+
+    if request.method == 'POST':
+        errors = []
+
+        data = clean_dict(dict_fns.unflatten(tuplize_dict(parse_params(request.form))))
+
+        if not type(data['dataset']) is list:
+            data['dataset'] = list([data['dataset']])
+
+        for package_id in data['dataset']:
+            try:
+                get_action('package_patch')({}, {'id': package_id, 'metadata_review_date': helpers.utcnow_as_string()})
+            except Exception as e:
+                log.error(str(e))
+                errors.append({'id': package_id, 'message': str(e)})
+
+        if not errors:
+            h.flash_success('Dataset(s) marked as reviewed.')
+        else:
+            h.flash_error('Errors updating dataset review date: {}'.format(errors))
+
+        return h.redirect_to('/dashboard/review-datasets{}'.format('?org_id=' + org_id if org_id else ''))
 
     extra_vars = {
         'packages': helpers.qdes_review_datasets(org_id),
