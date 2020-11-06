@@ -3,6 +3,7 @@ import ckan.plugins.toolkit as toolkit
 import logging
 
 from ckanext.qdes import blueprint, helpers
+from ckanext.qdes.logic.action import get
 from pprint import pformat
 
 log = logging.getLogger(__name__)
@@ -12,6 +13,7 @@ class QdesPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.IBlueprint)
     plugins.implements(plugins.ITemplateHelpers)
+    plugins.implements(plugins.IActions)
 
     # IConfigurer
     def update_config(self, config_):
@@ -29,5 +31,16 @@ class QdesPlugin(plugins.SingletonPlugin):
             'qdes_review_datasets': helpers.qdes_review_datasets,
             'qdes_review_due_date': helpers.qdes_review_due_date,
             'qdes_get_dataset_review_period': helpers.qdes_get_dataset_review_period,
-            'qdes_organization_list': helpers.qdes_organization_list
+            'qdes_organization_list': helpers.qdes_organization_list,
+            'qdes_render_date_with_offset': helpers.qdes_render_date_with_offset
+        }
+
+    # IActions
+    def get_actions(self):
+        return {
+            'qdes_datasets_not_updated': get.qdes_datasets_not_updated,
+            'qdes_empty_recommended': get.qdes_empty_recommended,
+            'qdes_invalid_uris': get.qdes_invalid_uris,
+            'qdes_datasets_not_reviewed': get.qdes_datasets_not_reviewed,
+            'qdes_report_all': get.qdes_report_all,
         }

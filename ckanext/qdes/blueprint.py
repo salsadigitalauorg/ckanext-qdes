@@ -64,4 +64,33 @@ def dashboard_review_datasets():
     return render('user/dashboard_review_datasets.html', extra_vars=extra_vars)
 
 
+def dashboard_reports():
+    if request.method == 'POST':
+        rows = []
+        data = clean_dict(dict_fns.unflatten(tuplize_dict(parse_params(request.form))))
+        log.error(data)
+
+        available_actions = [
+            'qdes_datasets_not_updated',
+            'qdes_empty_recommended',
+            'qdes_invalid_uris',
+            'qdes_datasets_not_reviewed',
+        ]
+
+        if data.get('audit_type') in available_actions:
+            rows = get_action(data.get('audit_type'))({}, {'org_id': data['org_id']})
+        else:
+            rows = get_action('qdes_report_all')({}, {'org_id': data['org_id']})
+
+        log.error(data)
+
+        return h.redirect_to('/dashboard/reports')
+
+    extra_vars = {
+        'user_dict': get_action('user_show')({}, {'id': g.userobj.id}),
+    }
+    return render('user/dashboard_reports.html', extra_vars=extra_vars)
+
+
 qdes.add_url_rule(u'/dashboard/review-datasets', view_func=dashboard_review_datasets, methods=[u'GET', u'POST'])
+qdes.add_url_rule(u'/dashboard/reports', view_func=dashboard_reports, methods=[u'GET', u'POST'])

@@ -10,6 +10,7 @@ from ckan.model import Session
 from ckan.model.package import Package
 from ckan.model.package_extra import PackageExtra
 from ckan.model.group import Group, Member
+from ckan.lib.helpers import render_datetime
 
 from pprint import pformat
 
@@ -18,6 +19,11 @@ log = logging.getLogger(__name__)
 
 def utcnow_as_string():
     return datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')
+
+
+def qdes_render_date_with_offset(date_value_utc):
+    offset = render_datetime(date_value_utc, date_format='%z')
+    return render_datetime(date_value_utc, date_format='%Y-%m-%dT%H:%M:%S') + offset[:3] + ':' + offset[-2:]
 
 
 def qdes_organization_list(user_id=None):
