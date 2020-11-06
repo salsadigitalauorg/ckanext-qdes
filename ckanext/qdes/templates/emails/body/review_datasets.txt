@@ -1,0 +1,10 @@
+The Ecosciences.Qld Data Catalogue performs a series of automated checks on records in the system to maintain data quality.
+
+The following datasets/data services for which you are the Point of Contact have been identified as needed review.
+
+Please review the affected datasets/data services and review the metadata
+
+The affected datasets/data services are:
+{% for dataset in datasets %}
+- {{dataset.get('title')}} : {{dataset.get('url')}}
+{% endfor %}

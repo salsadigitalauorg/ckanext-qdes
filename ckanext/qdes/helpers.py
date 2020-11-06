@@ -10,6 +10,7 @@ from ckan.model import Session
 from ckan.model.package import Package
 from ckan.model.package_extra import PackageExtra
 from ckan.model.group import Group, Member
+from ckanext.qdes import constants
 
 from pprint import pformat
 
@@ -38,7 +39,7 @@ def qdes_organization_list(user_id=None):
 
 
 def qdes_get_dataset_review_period():
-    return config.get('ckanext.qdes_schema.dataset_review_period', 1)
+    return config.get('ckanext.qdes_schema.dataset_review_period', constants.DEFAULT_DATASET_REVIEW_PERIOD)
 
 
 def qdes_review_datasets(org_id=None):
