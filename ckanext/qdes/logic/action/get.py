@@ -8,7 +8,7 @@ from ckan.lib.helpers import url_for, render_datetime
 from ckanext.qdes.helpers import qdes_render_date_with_offset
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
-from sqlalchemy import asc
+from sqlalchemy import asc, cast, Date
 from pprint import pformat
 
 log = logging.getLogger(__name__)
@@ -22,13 +22,20 @@ def _qdes_get_organization_dict_by_id(id, organizations):
 
     return []
 
+
 def qdes_datasets_not_updated(context, config):
-    last_modify_date_threshold = datetime.utcnow() - relativedelta(months=1)
+    """
+    List of all datasets that have been created but have not been updated in 12 months.
+    """
+    last_modify_date_threshold = datetime.utcnow() - relativedelta(months=12)
 
     query = Session.query(Package) \
         .filter(Package.state == 'active') \
-        .filter(Package.metadata_modified < last_modify_date_threshold) \
+        .filter(Package.metadata_modified <= last_modify_date_threshold) \
         .order_by(asc(Package.metadata_modified))
+
+    if config.get('org_id', None):
+        query = query.filter(Package.owner_org == config.get('org_id'))
 
     packages = query.all()
 
@@ -43,15 +50,14 @@ def qdes_datasets_not_updated(context, config):
         org_dict = _qdes_get_organization_dict_by_id(pkg_dict.get('owner_org'), organizations)
 
         rows.append({
-            'dataset_name': pkg_dict.get('name'),
-            'url': url_for('dataset.read', id=pkg_dict.get('id'), _external=True),
-            'point_of_contact': '',
-            'dataset_creation_date': qdes_render_date_with_offset(pkg_dict.get('metadata_created')),
-            'dataset_update_date': qdes_render_date_with_offset(pkg_dict.get('metadata_modified')),
-            'organisation_name': org_dict.get('name'),
+            'Dataset name': pkg_dict.get('name', ''),
+            'Link to dataset (URI)': url_for('dataset.read', id=pkg_dict.get('id'), _external=True),
+            'Dataset creator': extras.get('contact_creator', ''),
+            'Point of contact (URI)': extras.get('contact_point', ''),
+            'Dataset creation date': qdes_render_date_with_offset(pkg_dict.get('metadata_created')),
+            'Dataset update date': qdes_render_date_with_offset(pkg_dict.get('metadata_modified')),
+            'Organisation name': org_dict.get('name', ''),
         })
-
-    log.error(pformat(rows))
 
     return rows
 

@@ -66,23 +66,26 @@ def dashboard_review_datasets():
 
 def dashboard_reports():
     if request.method == 'POST':
-        rows = []
+        # Get the submitted data.
         data = clean_dict(dict_fns.unflatten(tuplize_dict(parse_params(request.form))))
-        log.error(data)
 
+        # Get the rows.
         available_actions = [
             'qdes_datasets_not_updated',
             'qdes_empty_recommended',
             'qdes_invalid_uris',
             'qdes_datasets_not_reviewed',
         ]
-
         if data.get('audit_type') in available_actions:
             rows = get_action(data.get('audit_type'))({}, {'org_id': data['org_id']})
         else:
             rows = get_action('qdes_report_all')({}, {'org_id': data['org_id']})
 
-        log.error(data)
+        log.error(pformat(rows))
+
+        # @todo, convert to csv.
+        # @todo, zip it if multiple file.
+        # @todo, force download the zip or csv.
 
         return h.redirect_to('/dashboard/reports')
 
