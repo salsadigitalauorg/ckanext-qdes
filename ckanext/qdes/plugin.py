@@ -38,7 +38,7 @@ class QdesPlugin(plugins.SingletonPlugin):
     # IClick
     def get_commands(self):
         return get_commands()
-    
+
     # IActions
     def get_actions(self):
         return {
