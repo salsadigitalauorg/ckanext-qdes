@@ -18,11 +18,11 @@ def review_datasets():
     for review_dataset in review_datasets:
         contact_point = review_dataset.get('contact_point', None)
         datasets = contact_points.get(contact_point, [])
-        # Only add dataset if it does not already exist in datasets list
         title = review_dataset.get('title')
         name = review_dataset.get('name')
         url = toolkit.url_for('{}.read'.format(review_dataset.get('type', None)), id=name, _external=True)
         dataset = {'title': title, 'url': url}
+        # Only add dataset if it does not already exist in datasets list
         datasets.append(dataset) if dataset not in datasets else datasets
         contact_points[contact_point] = datasets
 
