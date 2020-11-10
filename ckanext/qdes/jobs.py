@@ -35,6 +35,6 @@ def review_datasets():
                 recipient_name = contact_point_data.get('Name', '')
                 recipient_email = contact_point_data.get('Email', '')
                 subject = render('emails/subject/review_datasets.txt')
-                body = render('emails/body/review_datasets.txt', {'recipient_name': recipient_name, 'datasets': datasets})
-                body_html = render('emails/body/review_datasets.html', {'recipient_name': recipient_name, 'datasets': datasets})
+                body = render('emails/body/review_datasets.txt', {'datasets': datasets})
+                body_html = render('emails/body/review_datasets.html', {'datasets': datasets})
                 toolkit.enqueue_job(toolkit.mail_recipient, [recipient_name, recipient_email, subject, body, body_html])

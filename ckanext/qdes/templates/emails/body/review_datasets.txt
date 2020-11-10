@@ -1,10 +1,10 @@
 The Ecosciences.Qld Data Catalogue performs a series of automated checks on records in the system to maintain data quality.
 
-The following datasets/data services for which you are the Point of Contact have been identified as needed review.
+Datasets which have not changed or been updated in over 12 months are flagged for review to ensure that records are continually maintained and valid.
 
-Please review the affected datasets/data services and review the metadata
+Please review the following datasets and ensure information is up to date. Once complete please mark the datasets as reviewed.
 
-The affected datasets/data services are:
+The affected datasets are:
 {% for dataset in datasets %}
 - {{dataset.get('title')}} : {{dataset.get('url')}}
 {% endfor %}
