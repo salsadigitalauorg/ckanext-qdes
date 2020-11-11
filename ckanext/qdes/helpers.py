@@ -54,11 +54,6 @@ def qdes_review_datasets(org_id=None):
     query = Session.query(Package).join(PackageExtra)
 
     # Filter by metadata review date.
-    # dataset_review_period = qdes_get_dataset_review_period()
-    # start_time = datetime.utcnow() - relativedelta(months=dataset_review_period)
-    # query = query.filter(PackageExtra.key == 'metadata_review_date') \
-    #     .filter(cast(PackageExtra.value, DateTime) <= start_time) \
-    #     .order_by(asc(PackageExtra.value))#
     query = query.filter(PackageExtra.key == 'metadata_review_date') \
         .filter(PackageExtra.value != '') \
         .filter(Package.state == 'active') \

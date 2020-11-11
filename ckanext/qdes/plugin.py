@@ -39,8 +39,8 @@ class QdesPlugin(plugins.SingletonPlugin):
     def get_actions(self):
         return {
             'qdes_datasets_not_updated': get.qdes_datasets_not_updated,
-            'qdes_empty_recommended': get.qdes_empty_recommended,
-            'qdes_invalid_uris': get.qdes_invalid_uris,
+            'qdes_datasets_with_empty_recommended_fields': get.qdes_datasets_with_empty_recommended_fields,
+            'qdes_datasets_with_invalid_urls': get.qdes_datasets_with_invalid_urls,
             'qdes_datasets_not_reviewed': get.qdes_datasets_not_reviewed,
             'qdes_report_all': get.qdes_report_all,
         }

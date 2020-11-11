@@ -72,8 +72,8 @@ def dashboard_reports():
         # Get the rows.
         available_actions = [
             'qdes_datasets_not_updated',
-            'qdes_empty_recommended',
-            'qdes_invalid_uris',
+            'qdes_datasets_with_empty_recommended_fields',
+            'qdes_datasets_with_invalid_urls',
             'qdes_datasets_not_reviewed',
         ]
         if data.get('audit_type') in available_actions:
