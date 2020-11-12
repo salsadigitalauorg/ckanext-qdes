@@ -65,6 +65,10 @@ def dashboard_review_datasets():
 
 
 def dashboard_reports():
+    # Only sysadmin can access.
+    if not g.userobj.sysadmin:
+        abort(404, 'Not found')
+
     if request.method == 'POST':
         # Get the submitted data.
         data = clean_dict(dict_fns.unflatten(tuplize_dict(parse_params(request.form))))
