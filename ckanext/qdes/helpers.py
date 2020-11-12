@@ -100,7 +100,7 @@ def qdes_generate_csv(title, rows):
     """
     filename = ''
     if rows:
-        filename = title + '-' + str(datetime.utcnow().timestamp()) + '.csv'
+        filename = 'audit-' + str(datetime.utcnow().strftime('%Y-%m-%dT%H-%M-%S')) + '-' + title + '.csv'
 
         fieldnames = []
         for key in rows[0]:

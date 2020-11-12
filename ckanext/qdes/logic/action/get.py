@@ -327,16 +327,11 @@ def qdes_datasets_not_reviewed(context, config):
 def qdes_report_all(context, config):
     org_id = config.get('org_id', None)
 
-    reports = [
-        'qdes_datasets_not_updated',
-        'qdes_datasets_with_empty_recommended_fields',
-        'qdes_datasets_not_reviewed',
-        'qdes_datasets_with_invalid_urls',
-    ]
+    available_actions = config.get('available_actions', [])
 
     csv_files = []
-    for report in reports:
-        csv_file = qdes_generate_csv(report, get_action(report)({}, {'org_id': org_id}))
+    for report in available_actions:
+        csv_file = qdes_generate_csv(available_actions.get(report), get_action(report)({}, {'org_id': org_id}))
 
         if csv_file:
             csv_files.append(csv_file)

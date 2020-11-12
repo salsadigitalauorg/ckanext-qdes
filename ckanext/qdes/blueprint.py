@@ -74,19 +74,19 @@ def dashboard_reports():
         data = clean_dict(dict_fns.unflatten(tuplize_dict(parse_params(request.form))))
 
         # Get the rows.
-        available_actions = [
-            'qdes_datasets_not_updated',
-            'qdes_datasets_with_empty_recommended_fields',
-            'qdes_datasets_with_invalid_urls',
-            'qdes_datasets_not_reviewed',
-        ]
+        available_actions = {
+            'qdes_datasets_not_updated': 'not-updated',
+            'qdes_datasets_with_empty_recommended_fields': 'recommended',
+            'qdes_datasets_with_invalid_urls': 'invalid-urls',
+            'qdes_datasets_not_reviewed': 'not-reviewed',
+        }
         if data.get('audit_type') in available_actions:
             rows = get_action(data.get('audit_type'))({}, {'org_id': data['org_id']})
-            file = helpers.qdes_generate_csv(data.get('audit_type'), rows)
+            file = helpers.qdes_generate_csv(available_actions.get(data.get('audit_type')), rows)
             type = 'csv'
 
         else:
-            file = get_action('qdes_report_all')({}, {'org_id': data['org_id']})
+            file = get_action('qdes_report_all')({}, {'available_actions': available_actions, 'org_id': data['org_id']})
             type = 'zip'
 
         if file:
