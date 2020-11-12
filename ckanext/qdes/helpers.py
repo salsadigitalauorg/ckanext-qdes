@@ -21,6 +21,7 @@ from pprint import pformat
 log = logging.getLogger(__name__)
 tmp_dir = '/app/src/ckanext-qdes/ckanext/qdes/tmp/'
 
+
 def utcnow_as_string():
     return datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')
 
@@ -92,8 +93,9 @@ def qdes_review_due_date(review_date):
     due_date = datetime.strptime(review_date, '%Y-%m-%dT%H:%M:%S') + relativedelta(months=dataset_review_period)
     return due_date.strftime('%Y-%m-%dT%H:%M:%S')
 
+
 def qdes_generate_csv(title, rows):
-    """
+    u"""
     Create a csv file to ./tmp directory and return the filename.
     """
     filename = ''
@@ -114,7 +116,7 @@ def qdes_generate_csv(title, rows):
 
 
 def qdes_zip_csv_files(files):
-    """
+    u"""
     Create a zip file to ./tmp directory and return the zip filename.
     """
     filename = 'backup-' + str(datetime.utcnow().timestamp()) + '.zip'
@@ -132,6 +134,9 @@ def qdes_zip_csv_files(files):
 
 
 def qdes_send_file_to_browser(file, type):
+    u"""
+    Send the file to browser, and remove it.
+    """
     with open(os.path.join(tmp_dir, file), 'rb') as f:
         data = f.readlines()
     os.remove(os.path.join(tmp_dir, file))

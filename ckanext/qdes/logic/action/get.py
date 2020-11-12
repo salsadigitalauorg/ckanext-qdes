@@ -10,6 +10,7 @@ from ckan.lib.helpers import url_for, render_datetime
 from ckan.plugins.toolkit import get_action
 from ckanext.qdes.helpers import qdes_render_date_with_offset, qdes_get_dataset_review_period, qdes_review_datasets, \
     utcnow_as_string, qdes_generate_csv, qdes_zip_csv_files, qdes_send_file_to_browser
+from ckanext.vocabulary_services.secure.helpers import get_secure_vocabulary_record
 from ckanext.invalid_uris.model import InvalidUri
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -30,6 +31,14 @@ def _qdes_get_organization_dict_by_id(id, organizations):
             return org_dict
 
     return []
+
+
+def _qdes_extract_point_of_contact(pos_id, field):
+    if pos_id is not None:
+        vocab = get_secure_vocabulary_record('point-of-contact', pos_id)
+        return vocab.get(field, '')
+
+    return ''
 
 
 def qdes_datasets_not_updated(context, config):
@@ -62,7 +71,8 @@ def qdes_datasets_not_updated(context, config):
             'Dataset name': pkg_dict.get('title', pkg_dict.get('name', '')),
             'Link to dataset (URI)': url_for('dataset.read', id=pkg_dict.get('id'), _external=True),
             'Dataset creator': extras.get('contact_creator', ''),
-            'Point of contact (URI)': extras.get('contact_point', ''),
+            'Point of contact - name': _qdes_extract_point_of_contact(extras.get('contact_point', None), 'Name'),
+            'Point of contact - email': _qdes_extract_point_of_contact(extras.get('contact_point', None), 'Email'),
             'Dataset creation date': qdes_render_date_with_offset(pkg_dict.get('metadata_created')),
             'Dataset update date': qdes_render_date_with_offset(pkg_dict.get('metadata_modified')),
             'Organisation name': org_dict.get('title', ''),
@@ -124,7 +134,8 @@ def qdes_datasets_with_empty_recommended_fields(context, config):
                 'Resource name': '',
                 'Link to resource': '',
                 'Dataset creator': package.get('contact_creator', ''),
-                'Point of contact (URI)': package.get('contact_point', ''),
+                'Point of contact - name': _qdes_extract_point_of_contact(package.get('contact_point', None), 'Name'),
+                'Point of contact - email': _qdes_extract_point_of_contact(package.get('contact_point', None), 'Email'),
                 'List of recommended fields without values': ', '.join(missing_values),
                 'Organisation name': package.get('organization').get('title', ''),
             })
@@ -143,7 +154,10 @@ def qdes_datasets_with_empty_recommended_fields(context, config):
                                                 _external=True
                                                 ),
                     'Dataset creator': package.get('contact_creator', ''),
-                    'Point of contact (URI)': package.get('contact_point', ''),
+                    'Point of contact - name':
+                        _qdes_extract_point_of_contact(package.get('contact_point', None), 'Name'),
+                    'Point of contact - email':
+                        _qdes_extract_point_of_contact(package.get('contact_point', None), 'Email'),
                     'List of recommended fields without values': ', '.join(missing_values),
                     'Organisation name': package.get('organization').get('title', ''),
                 })
@@ -237,7 +251,10 @@ def qdes_datasets_with_invalid_urls(context, config):
                 'Resource name': '',
                 'Link to resource': '',
                 'Dataset creator': entity_dict.get('contact_creator', ''),
-                'Point of contact (URI)': entity_dict.get('contact_point', ''),
+                'Point of contact - name':
+                    _qdes_extract_point_of_contact(entity_dict.get('contact_point', None), 'Name'),
+                'Point of contact - email':
+                    _qdes_extract_point_of_contact(entity_dict.get('contact_point', None), 'Email'),
                 'List of fields with broken links': ', '.join(invalid_uri.get('fields', [])),
                 'Organisation name': entity_dict.get('organization').get('title', ''),
             })
@@ -253,7 +270,10 @@ def qdes_datasets_with_invalid_urls(context, config):
                                             _external=True
                                             ),
                 'Dataset creator': parent_entity_dict.get('contact_creator', ''),
-                'Point of contact (URI)': parent_entity_dict.get('contact_point', ''),
+                'Point of contact - name':
+                    _qdes_extract_point_of_contact(parent_entity_dict.get('contact_point', None), 'Name'),
+                'Point of contact - email':
+                    _qdes_extract_point_of_contact(parent_entity_dict.get('contact_point', None), 'Email'),
                 'List of fields with broken links': ', '.join(invalid_uri.get('fields', [])),
                 'Organisation name': parent_entity_dict.get('organization').get('title', ''),
             })
@@ -293,7 +313,10 @@ def qdes_datasets_not_reviewed(context, config):
             'Dataset name': pkg_dict.get('title', pkg_dict.get('name', '')),
             'Link to dataset (URI)': url_for('dataset.read', id=pkg_dict.get('id'), _external=True),
             'Dataset creator': extras.get('contact_creator', ''),
-            'Point of contact (URI)': extras.get('contact_point', ''),
+            'Point of contact - name':
+                _qdes_extract_point_of_contact(extras.get('contact_point', None), 'Name'),
+            'Point of contact - email':
+                _qdes_extract_point_of_contact(extras.get('contact_point', None), 'Email'),
             'Metadata review date': qdes_render_date_with_offset(extras.get('metadata_review_date')),
             'Organisation name': org_dict.get('title', ''),
         })
@@ -317,5 +340,7 @@ def qdes_report_all(context, config):
 
         if csv_file:
             csv_files.append(csv_file)
+    if csv_files:
+        return qdes_zip_csv_files(csv_files)
 
-    return qdes_zip_csv_files(csv_files)
+    return []
