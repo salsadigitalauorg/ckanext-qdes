@@ -78,16 +78,19 @@ def dashboard_reports():
         ]
         if data.get('audit_type') in available_actions:
             rows = get_action(data.get('audit_type'))({}, {'org_id': data['org_id']})
+            file = helpers.qdes_generate_csv(data.get('audit_type'), rows)
+            type = 'csv'
+
         else:
-            rows = get_action('qdes_report_all')({}, {'org_id': data['org_id']})
+            file = get_action('qdes_report_all')({}, {'org_id': data['org_id']})
+            type = 'zip'
 
-        log.error(pformat(rows))
-
-        # @todo, convert to csv.
-        # @todo, zip it if multiple file.
-        # @todo, force download the zip or csv.
-
-        return h.redirect_to('/dashboard/reports')
+        if file:
+            # Send to browser.
+            return helpers.qdes_send_file_to_browser(file, type)
+        else:
+            h.flash_error('No report can be generated, data is empty.')
+            return h.redirect_to('/dashboard/reports')
 
     extra_vars = {
         'user_dict': get_action('user_show')({}, {'id': g.userobj.id}),

@@ -8,7 +8,8 @@ from ckan.model.package import Package
 from ckan.model.package_extra import PackageExtra
 from ckan.lib.helpers import url_for, render_datetime
 from ckan.plugins.toolkit import get_action
-from ckanext.qdes.helpers import qdes_render_date_with_offset, qdes_get_dataset_review_period, qdes_review_datasets
+from ckanext.qdes.helpers import qdes_render_date_with_offset, qdes_get_dataset_review_period, qdes_review_datasets, \
+    utcnow_as_string, qdes_generate_csv, qdes_zip_csv_files, qdes_send_file_to_browser
 from ckanext.invalid_uris.model import InvalidUri
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -21,6 +22,7 @@ log = logging.getLogger(__name__)
 def _qdes_get_organization_list():
     return Session.query(Group).filter(Group.is_organization == True).all()
 
+
 def _qdes_get_organization_dict_by_id(id, organizations):
     for organization in organizations:
         org_dict = organization.as_dict()
@@ -31,7 +33,7 @@ def _qdes_get_organization_dict_by_id(id, organizations):
 
 
 def qdes_datasets_not_updated(context, config):
-    """
+    u"""
     List of all datasets that have been created but have not been updated in 12 months.
     """
     last_modify_date_threshold = datetime.utcnow() - relativedelta(months=12)
@@ -41,7 +43,7 @@ def qdes_datasets_not_updated(context, config):
         .filter(Package.metadata_modified <= last_modify_date_threshold) \
         .order_by(asc(Package.metadata_modified))
 
-    if config.get('org_id', None):
+    if config and config.get('org_id', None):
         query = query.filter(Package.owner_org == config.get('org_id'))
 
     packages = query.all()
@@ -89,6 +91,9 @@ def _check_recommended_field_value(entity_dict, recommended_fields):
 
 
 def qdes_datasets_with_empty_recommended_fields(context, config):
+    u"""
+    List of all datasets that have no values against recommended metadata fields.
+    """
     # Get list of recommended fields.
     dataset_scheme = scheming_helpers.scheming_get_dataset_schema('dataset')
     dataset_recommended_fields = _get_recommended_dataset_fields(dataset_scheme, 'dataset_fields')
@@ -106,7 +111,7 @@ def qdes_datasets_with_empty_recommended_fields(context, config):
             i += 1
 
         for package in packages:
-            if config.get('org_id') and package.get('organization').get('id') != config.get('org_id'):
+            if config and config.get('org_id') and package.get('organization').get('id') != config.get('org_id'):
                 continue
 
             if package.get('type') == 'dataservice':
@@ -127,8 +132,6 @@ def qdes_datasets_with_empty_recommended_fields(context, config):
             # Check dataset resource metadata fields.
             for resource in package.get('resources', []):
                 missing_values = _check_recommended_field_value(resource, dataset_resource_recommended_fields)
-                log.error('res' + resource.get('id'))
-                log.error(package.get('id'))
                 rows.append({
                     'Dataset name': package.get('title', package.get('name', '')),
                     'Link to dataset (URI)': url_for('dataset.read', id=package.get('id'), _external=True),
@@ -159,11 +162,9 @@ def _get_uri_validated_fields(scheme, field_group):
 
 
 def qdes_datasets_with_invalid_urls(context, config):
-    # Get list that need to be validated.
-    # dataset_scheme = scheming_helpers.scheming_get_dataset_schema('dataset')
-    # dataset_uri_validated_fields = _get_uri_validated_fields(dataset_scheme, 'dataset_fields')
-    # dataset_resource_uri_validated_fields = _get_uri_validated_fields(dataset_scheme, 'resource_fields')
-
+    u"""
+    List of all datasets with broken links to resources.
+    """
     # Get list of invalid uris.
     uris = Session.query(InvalidUri).all()
     invalid_uris = [uri.as_dict() for uri in uris]
@@ -195,7 +196,8 @@ def qdes_datasets_with_invalid_urls(context, config):
             else:
                 entity_dict = get_action('package_show')({}, {'id': entity_id})
 
-                if config.get('org_id') and entity_dict.get('organization').get('id') != config.get('org_id'):
+                if config and config.get('org_id') and entity_dict.get('organization').get('id') != config.get(
+                        'org_id'):
                     continue
 
                 if entity_dict.get('type') == 'dataservice':
@@ -210,17 +212,23 @@ def qdes_datasets_with_invalid_urls(context, config):
                 parent_entity_dict = packages.get(resources.get('package_id'))
             else:
                 entity_dict = get_action('resource_show')({}, {'id': entity_id})
-                # Cache the result.
-                resources[entity_id] = {}
-                resources[entity_id].update(entity_dict)
 
                 if resources.get('package_id') in packages:
                     parent_entity_dict = packages.get(entity_dict.get('package_id'))
                 else:
                     parent_entity_dict = get_action('package_show')({}, {'id': entity_dict.get('package_id')})
-                    # Cache the result.
+
+                    if config and config.get('org_id') \
+                            and parent_entity_dict.get('organization').get('id') != config.get('org_id'):
+                        continue
+
+                    # Cache the package result.
                     packages[entity_id] = {}
                     packages[entity_id].update(parent_entity_dict)
+
+                # Cache the resource result.
+                resources[entity_id] = {}
+                resources[entity_id].update(entity_dict)
 
         if invalid_uri.get('type') == 'dataset':
             rows.append({
@@ -254,6 +262,9 @@ def qdes_datasets_with_invalid_urls(context, config):
 
 
 def qdes_datasets_not_reviewed(context, config):
+    u"""
+    List of all datasets with over 12 months review date.
+    """
     dataset_review_period = qdes_get_dataset_review_period()
     start_time = datetime.utcnow() - relativedelta(months=dataset_review_period)
     query = Session.query(Package).join(PackageExtra) \
@@ -263,7 +274,7 @@ def qdes_datasets_not_reviewed(context, config):
         .filter(cast(PackageExtra.value, DateTime) <= start_time.strftime('%Y-%m-%dT%H:%M:%S')) \
         .order_by(asc(PackageExtra.value))
 
-    if config.get('org_id', None):
+    if config and config.get('org_id', None):
         query = query.filter(Package.owner_org == config.get('org_id'))
 
     packages = query.all()
@@ -287,10 +298,24 @@ def qdes_datasets_not_reviewed(context, config):
             'Organisation name': org_dict.get('title', ''),
         })
 
-    log.error(pformat(rows))
-
     return rows
 
 
 def qdes_report_all(context, config):
-    pass
+    org_id = config.get('org_id', None)
+
+    reports = [
+        'qdes_datasets_not_updated',
+        'qdes_datasets_with_empty_recommended_fields',
+        'qdes_datasets_not_reviewed',
+        'qdes_datasets_with_invalid_urls',
+    ]
+
+    csv_files = []
+    for report in reports:
+        csv_file = qdes_generate_csv(report, get_action(report)({}, {'org_id': org_id}))
+
+        if csv_file:
+            csv_files.append(csv_file)
+
+    return qdes_zip_csv_files(csv_files)

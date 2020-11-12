@@ -1,21 +1,25 @@
-import logging
+import os
+import csv
 import time
+import zipfile
+import logging
 
-from sqlalchemy import cast, asc, DateTime
-from datetime import datetime
-from dateutil.relativedelta import relativedelta
-from ckan.plugins.toolkit import config
 from ckan.common import g
+from ckan.lib.helpers import render_datetime
 from ckan.model import Session
 from ckan.model.package import Package
 from ckan.model.package_extra import PackageExtra
 from ckan.model.group import Group, Member
-from ckan.lib.helpers import render_datetime
+from ckan.plugins.toolkit import config
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+from flask import Response
+from sqlalchemy import cast, asc, DateTime
 
 from pprint import pformat
 
 log = logging.getLogger(__name__)
-
+tmp_dir = '/app/src/ckanext-qdes/ckanext/qdes/tmp/'
 
 def utcnow_as_string():
     return datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')
@@ -87,3 +91,52 @@ def qdes_review_due_date(review_date):
     dataset_review_period = qdes_get_dataset_review_period()
     due_date = datetime.strptime(review_date, '%Y-%m-%dT%H:%M:%S') + relativedelta(months=dataset_review_period)
     return due_date.strftime('%Y-%m-%dT%H:%M:%S')
+
+def qdes_generate_csv(title, rows):
+    """
+    Create a csv file to ./tmp directory and return the filename.
+    """
+    filename = ''
+    if rows:
+        filename = title + '-' + str(datetime.utcnow().timestamp()) + '.csv'
+
+        fieldnames = []
+        for key in rows[0]:
+            fieldnames.append(key)
+
+        with open(tmp_dir + filename, mode='w') as csv_file:
+            csv_writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+            csv_writer.writeheader()
+            for row in rows:
+                csv_writer.writerow(row)
+
+    return filename
+
+
+def qdes_zip_csv_files(files):
+    """
+    Create a zip file to ./tmp directory and return the zip filename.
+    """
+    filename = 'backup-' + str(datetime.utcnow().timestamp()) + '.zip'
+    zipf = zipfile.ZipFile(tmp_dir + filename, 'w', zipfile.ZIP_DEFLATED)
+
+    for file in files:
+        zipf.write(tmp_dir + file, file)
+
+        # Delete the csv files.
+        os.remove(tmp_dir + file)
+
+    zipf.close()
+
+    return filename
+
+
+def qdes_send_file_to_browser(file, type):
+    with open(os.path.join(tmp_dir, file), 'rb') as f:
+        data = f.readlines()
+    os.remove(os.path.join(tmp_dir, file))
+
+    return Response(data, headers={
+        'Content-Type': 'application/zip' if type == 'zip' else 'text/csv',
+        'Content-Disposition': 'attachment; filename=%s;' % file
+    })
