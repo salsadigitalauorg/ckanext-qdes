@@ -175,74 +175,74 @@ def _get_uri_validated_fields(scheme, field_group):
     return uri_validated_fields
 
 
-def qdes_datasets_with_invalid_urls(context, config):
+def qdes_datasets_with_invalid_urls(context, config={}):
     u"""
     List of all datasets with broken links to resources.
     """
+    org_id = config.get('org_id', None)
+
     # Get list of invalid uris.
-    uris = Session.query(InvalidUri).all()
-    invalid_uris = [uri.as_dict() for uri in uris]
+    invalid_uris = Session.query(InvalidUri).all()
 
     # Build package list.
     entities = {}
-    for invalid_uri in invalid_uris:
-        if invalid_uri.get('entity_id') in entities:
-            entities[invalid_uri.get('entity_id')].get('fields').append(invalid_uri.get('field'))
+    for uri in invalid_uris:
+        if uri.entity_id in entities:
+            entities[uri.entity_id]['fields'].append(uri.field)
         else:
-            entities[invalid_uri.get('entity_id')] = {}
-            entities[invalid_uri.get('entity_id')].update({
-                'type': invalid_uri.get('entity_type'),
-                'fields': [invalid_uri.get('field')],
-            })
+            entities[uri.entity_id] = {
+                'type': uri.entity_type,
+                'fields': [uri.field],
+            }
 
     # Build rows.
     rows = []
     packages = {}
     resources = {}
-    for entity_id in entities:
+
+    for entity_id, invalid_uri in entities.items():
         # Load entity and cache them.
         entity_dict = {}
         parent_entity_dict = {}
-        invalid_uri = entities.get(entity_id)
+
         if invalid_uri.get('type') == 'dataset':
-            if entity_id in packages:
-                entity_dict = packages.get(entity_id)
-            else:
-                entity_dict = get_action('package_show')({}, {'id': entity_id})
+            entity_dict = packages.get(entity_id, None)
+            if not entity_dict:
+                try:
+                    entity_dict = get_action('package_show')({}, {'id': entity_id})
 
-                if config and config.get('org_id') and entity_dict.get('organization').get('id') != config.get(
-                        'org_id'):
-                    continue
-
-                if entity_dict.get('type') == 'dataservice':
+                    if entity_dict.get('owner_org') != org_id or entity_dict.get('type') == 'dataservice':
+                        continue
+                except Exception as e:
+                    log.error(str(e), exc_info=True)
                     continue
 
                 # Cache the result.
-                packages[entity_id] = {}
-                packages[entity_id].update(entity_dict)
+                packages[entity_id] = entity_dict
         elif invalid_uri.get('type') == 'resource':
             if entity_id in resources:
                 entity_dict = resources.get(entity_id)
                 parent_entity_dict = packages.get(resources.get('package_id'))
             else:
-                entity_dict = get_action('resource_show')({}, {'id': entity_id})
+                try:
+                    entity_dict = get_action('resource_show')({}, {'id': entity_id})
 
-                if resources.get('package_id') in packages:
-                    parent_entity_dict = packages.get(entity_dict.get('package_id'))
-                else:
-                    parent_entity_dict = get_action('package_show')({}, {'id': entity_dict.get('package_id')})
+                    parent_entity_dict = packages.get(entity_dict.get('package_id'), None)
 
-                    if config and config.get('org_id') \
-                            and parent_entity_dict.get('organization').get('id') != config.get('org_id'):
-                        continue
+                    if not parent_entity_dict:
+                        parent_entity_dict = get_action('package_show')({}, {'id': entity_dict.get('package_id')})
 
-                    # Cache the package result.
-                    packages[entity_id] = {}
-                    packages[entity_id].update(parent_entity_dict)
+                        if parent_entity_dict.get('owner_org') != org_id:
+                            continue
 
-                # Cache the resource result.
-                resources[entity_id] = {}
-                resources[entity_id].update(entity_dict)
+                        # Cache the package result.
+                        packages[entity_id] = parent_entity_dict
+
+                    # Cache the resource result.
+                    resources[entity_id] = entity_dict
+                except Exception as e:
+                    log.error(str(e), exc_info=True)
+                    continue
 
         if invalid_uri.get('type') == 'dataset':
             rows.append({
