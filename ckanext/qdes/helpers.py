@@ -133,13 +133,15 @@ def qdes_zip_csv_files(files):
     return filename
 
 
-def qdes_send_file_to_browser(file, type):
+def qdes_send_file_to_browser(file, type, remove=True):
     u"""
     Send the file to browser, and remove it.
     """
     with open(os.path.join(tmp_dir, file), 'rb') as f:
         data = f.readlines()
-    os.remove(os.path.join(tmp_dir, file))
+
+    if remove:
+        os.remove(os.path.join(tmp_dir, file))
 
     return Response(data, headers={
         'Content-Type': 'application/zip' if type == 'zip' else 'text/csv',

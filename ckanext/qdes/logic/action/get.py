@@ -41,7 +41,7 @@ def qdes_datasets_not_updated(context, config={}):
         contact_point_pos = extras.get('contact_point', None)
         if not contact_point_pos in point_of_contacts:
             point_of_contacts[contact_point_pos] = qdes_logic_helpers \
-                .get_point_of_contact(contact_point_pos) if contact_point_pos else {}
+                .get_point_of_contact(context, contact_point_pos) if contact_point_pos else {}
 
         rows.append({
             'Dataset name': pkg_dict.get('title', pkg_dict.get('name', '')),
@@ -80,7 +80,7 @@ def qdes_datasets_with_empty_recommended_fields(context, config={}):
     has_result = True
     point_of_contacts = {}
     while has_result:
-        packages = get_action('current_package_list_with_resources')({}, {'limit': 10, 'offset': i})
+        packages = get_action('current_package_list_with_resources')(context, {'limit': 10, 'offset': i})
         if not packages:
             has_result = False
         else:
@@ -91,7 +91,7 @@ def qdes_datasets_with_empty_recommended_fields(context, config={}):
             contact_point_pos = package.get('contact_point', None)
             if not contact_point_pos in point_of_contacts:
                 point_of_contacts[contact_point_pos] = qdes_logic_helpers \
-                    .get_point_of_contact(contact_point_pos) if contact_point_pos else {}
+                    .get_point_of_contact(context, contact_point_pos) if contact_point_pos else {}
 
             # Get package organization.
             pkg_org = package.get('organization')
@@ -123,6 +123,7 @@ def qdes_datasets_with_empty_recommended_fields(context, config={}):
                     .qdes_empty_recommended_field_row(package, contact_point, missing_values, resource)
                 rows.append(row)
 
+
     return rows
 
 
@@ -152,7 +153,7 @@ def qdes_datasets_with_invalid_urls(context, config={}):
             entity_dict = packages.get(entity_id, None)
             if not entity_dict:
                 try:
-                    entity_dict = get_action('package_show')({}, {'id': entity_id})
+                    entity_dict = get_action('package_show')(context, {'id': entity_id})
 
                     if (org_id and entity_dict.get('owner_org') != org_id) \
                             or entity_dict.get('type') == 'dataservice':
@@ -169,12 +170,12 @@ def qdes_datasets_with_invalid_urls(context, config={}):
                 parent_entity_dict = packages.get(resources.get('package_id'))
             else:
                 try:
-                    entity_dict = get_action('resource_show')({}, {'id': entity_id})
+                    entity_dict = get_action('resource_show')(context, {'id': entity_id})
 
                     parent_entity_dict = packages.get(entity_dict.get('package_id'), None)
 
                     if not parent_entity_dict:
-                        parent_entity_dict = get_action('package_show')({}, {'id': entity_dict.get('package_id')})
+                        parent_entity_dict = get_action('package_show')(context, {'id': entity_dict.get('package_id')})
 
                         if org_id and parent_entity_dict.get('owner_org') != org_id:
                             continue
@@ -192,7 +193,7 @@ def qdes_datasets_with_invalid_urls(context, config={}):
         contact_point_pos = entity_dict.get('contact_point', None)
         if not contact_point_pos in point_of_contacts:
             point_of_contacts[contact_point_pos] = qdes_logic_helpers \
-                .get_point_of_contact(contact_point_pos) if contact_point_pos else {}
+                .get_point_of_contact(context, contact_point_pos) if contact_point_pos else {}
 
         if invalid_uri.get('type') == 'dataset':
             # Moved to helper function to reduce function size and avoid duplication
@@ -233,7 +234,7 @@ def qdes_datasets_not_reviewed(context, config):
         contact_point_pos = extras.get('contact_point', None)
         if not contact_point_pos in point_of_contacts:
             point_of_contacts[contact_point_pos] = qdes_logic_helpers \
-                .get_point_of_contact(contact_point_pos) if contact_point_pos else {}
+                .get_point_of_contact(context, contact_point_pos) if contact_point_pos else {}
 
         rows.append({
             'Dataset name': pkg_dict.get('title', pkg_dict.get('name', '')),
@@ -258,7 +259,7 @@ def qdes_report_all(context, config):
 
     csv_files = []
     for report in available_actions:
-        csv_file = qdes_generate_csv(available_actions.get(report), get_action(report)({}, {'org_id': org_id}))
+        csv_file = qdes_generate_csv(available_actions.get(report), get_action(report)(context, {'org_id': org_id}))
 
         if csv_file:
             csv_files.append(csv_file)

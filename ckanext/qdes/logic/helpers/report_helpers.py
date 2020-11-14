@@ -24,7 +24,7 @@ def qdes_extract_point_of_contact(pos_id, field):
     return ''
 
 
-def get_point_of_contact(pos_id=None):
+def get_point_of_contact(context, pos_id=None):
     """
     Different from the `_qdes_extract_point_of_contact` function
     above - it returns the full point of contact dict so that
@@ -33,7 +33,7 @@ def get_point_of_contact(pos_id=None):
     you want to use
     """
     if pos_id:
-        return get_secure_vocabulary_record('point-of-contact', pos_id)
+        return get_secure_vocabulary_record('point-of-contact', pos_id, context)
 
 
 def qdes_get_organization_list():

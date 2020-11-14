@@ -45,7 +45,8 @@ def dashboard_review_datasets():
 
         for package_id in data['dataset']:
             try:
-                get_action('package_patch')({'defer_commit': defer_commit}, {'id': package_id, 'metadata_review_date': helpers.utcnow_as_string()})
+                get_action('package_patch')({'defer_commit': defer_commit},
+                                            {'id': package_id, 'metadata_review_date': helpers.utcnow_as_string()})
             except Exception as e:
                 log.error(str(e))
                 errors.append({'id': package_id, 'message': str(e)})
@@ -102,5 +103,23 @@ def dashboard_reports():
     return render('user/dashboard_reports.html', extra_vars=extra_vars)
 
 
+def reports(type):
+    types = {
+        'not-updated': '',
+        'not-reviewed': '',
+        'invalid-urls': '',
+        'incomplete-recommended': '',
+    }
+
+    if type in types:
+        # Get the latest report directory.
+
+        # Get the csv file.
+
+        # Send to browser.
+        pass
+
+
 qdes.add_url_rule(u'/dashboard/review-datasets', view_func=dashboard_review_datasets, methods=[u'GET', u'POST'])
 qdes.add_url_rule(u'/dashboard/reports', view_func=dashboard_reports, methods=[u'GET', u'POST'])
+qdes.add_url_rule(u'/reports/<type>', view_func=reports, methods=[u'GET'])
