@@ -1,15 +1,43 @@
-import ckan.plugins.toolkit as toolkit
-import ckanext.scheming.helpers as scheming_helpers
-import ckanext.qdes.logic.helpers.report_helpers as qdes_logic_helpers
 import logging
+import ckan.authz as authz
+import ckan.plugins.toolkit as toolkit
+import ckanext.qdes.logic.helpers.report_helpers as qdes_logic_helpers
+import ckanext.scheming.helpers as scheming_helpers
 
-from ckan.model import Session
 from ckan.lib.helpers import url_for
-from ckan.plugins.toolkit import check_access, get_action
-from ckanext.qdes.helpers import qdes_render_date_with_offset, qdes_generate_csv, qdes_zip_csv_files
+from ckan.model import Session
+from ckanext.qdes import helpers
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 from pprint import pformat
+from sqlalchemy import func
 
+check_access = toolkit.check_access
+get_action = toolkit.get_action
+qdes_render_date_with_offset = helpers.qdes_render_date_with_offset
 log = logging.getLogger(__name__)
+
+
+def review_datasets(context, data_dict):
+    if not authz.is_sysadmin(context.get('user')) and not authz.has_user_permission_for_some_org(context.get('user'), 'create_dataset'):
+        return {'success': False, 'msg': toolkit._('Not authorized')}
+
+    model = context['model']
+    try:
+        cls = model.PackageExtra
+        dataset_review_period = data_dict.get('dataset_review_period', helpers.qdes_get_dataset_review_period())
+        review_date = datetime.utcnow() - relativedelta(months=dataset_review_period)
+
+        query = model.PackageExtra().Session.query(cls) \
+            .filter(cls.key == 'metadata_review_date') \
+            .filter(func.date(cls.value) >= func.date(review_date)) \
+            .filter(cls.state == 'active')
+
+        return [get_action('package_show')(context, {'id': package_extra.package_id, }) for package_extra in query.all()]
+    except Exception as e:
+        log.error(str(e))
+
+    return []
 
 
 def qdes_datasets_not_updated(context, config={}):
@@ -258,11 +286,11 @@ def qdes_report_all(context, config):
 
     csv_files = []
     for report in available_actions:
-        csv_file = qdes_generate_csv(available_actions.get(report), get_action(report)({}, {'org_id': org_id}))
+        csv_file = helpers.qdes_generate_csv(available_actions.get(report), get_action(report)({}, {'org_id': org_id}))
 
         if csv_file:
             csv_files.append(csv_file)
     if csv_files:
-        return qdes_zip_csv_files(csv_files)
+        return helpers.qdes_zip_csv_files(csv_files)
 
     return []
