@@ -16,6 +16,12 @@
           {{ h.build_nav_icon('qdes.dashboard_review_datasets', _('Review Datasets'), icon='check-square-o') }}
         {% endif %}
       {% endif %}
+
+       {% if g.userobj is not none %}
+        {% if g.userobj.sysadmin %}
+          {{ h.build_nav_icon('qdes.dashboard_reports', _('Reports'), icon='bar-chart') }}
+        {% endif %}
+      {% endif %}
     </ul>
   </header>
 {% endblock %}
