@@ -1,23 +1,34 @@
-import logging
+import os
+import csv
 import time
+import zipfile
+import logging
 
-from sqlalchemy import cast, asc, DateTime
-from datetime import datetime
-from dateutil.relativedelta import relativedelta
-from ckan.plugins.toolkit import config
 from ckan.common import g
+from ckan.lib.helpers import render_datetime
 from ckan.model import Session
 from ckan.model.package import Package
 from ckan.model.package_extra import PackageExtra
 from ckan.model.group import Group, Member
+from ckan.plugins.toolkit import config
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+from flask import Response
+from sqlalchemy import cast, asc, DateTime
 
 from pprint import pformat
 
 log = logging.getLogger(__name__)
+tmp_dir = '/app/src/ckanext-qdes/ckanext/qdes/tmp/'
 
 
 def utcnow_as_string():
     return datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')
+
+
+def qdes_render_date_with_offset(date_value_utc):
+    offset = render_datetime(date_value_utc, date_format='%z')
+    return render_datetime(date_value_utc, date_format='%Y-%m-%dT%H:%M:%S') + offset[:3] + ':' + offset[-2:]
 
 
 def qdes_organization_list(user_id=None):
@@ -48,11 +59,6 @@ def qdes_review_datasets(org_id=None):
     query = Session.query(Package).join(PackageExtra)
 
     # Filter by metadata review date.
-    # dataset_review_period = qdes_get_dataset_review_period()
-    # start_time = datetime.utcnow() - relativedelta(months=dataset_review_period)
-    # query = query.filter(PackageExtra.key == 'metadata_review_date') \
-    #     .filter(cast(PackageExtra.value, DateTime) <= start_time) \
-    #     .order_by(asc(PackageExtra.value))#
     query = query.filter(PackageExtra.key == 'metadata_review_date') \
         .filter(PackageExtra.value != '') \
         .filter(Package.state == 'active') \
@@ -86,3 +92,56 @@ def qdes_review_due_date(review_date):
     dataset_review_period = qdes_get_dataset_review_period()
     due_date = datetime.strptime(review_date, '%Y-%m-%dT%H:%M:%S') + relativedelta(months=dataset_review_period)
     return due_date.strftime('%Y-%m-%dT%H:%M:%S')
+
+
+def qdes_generate_csv(title, rows):
+    u"""
+    Create a csv file to ./tmp directory and return the filename.
+    """
+    filename = ''
+    if rows:
+        filename = 'audit-' + str(datetime.utcnow().strftime('%Y-%m-%dT%H-%M-%S')) + '-' + title + '.csv'
+
+        fieldnames = []
+        for key in rows[0]:
+            fieldnames.append(key)
+
+        with open(tmp_dir + filename, mode='w') as csv_file:
+            csv_writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+            csv_writer.writeheader()
+            for row in rows:
+                csv_writer.writerow(row)
+
+    return filename
+
+
+def qdes_zip_csv_files(files):
+    u"""
+    Create a zip file to ./tmp directory and return the zip filename.
+    """
+    filename = 'backup-' + str(datetime.utcnow().timestamp()) + '.zip'
+    zipf = zipfile.ZipFile(tmp_dir + filename, 'w', zipfile.ZIP_DEFLATED)
+
+    for file in files:
+        zipf.write(tmp_dir + file, file)
+
+        # Delete the csv files.
+        os.remove(tmp_dir + file)
+
+    zipf.close()
+
+    return filename
+
+
+def qdes_send_file_to_browser(file, type):
+    u"""
+    Send the file to browser, and remove it.
+    """
+    with open(os.path.join(tmp_dir, file), 'rb') as f:
+        data = f.readlines()
+    os.remove(os.path.join(tmp_dir, file))
+
+    return Response(data, headers={
+        'Content-Type': 'application/zip' if type == 'zip' else 'text/csv',
+        'Content-Disposition': 'attachment; filename=%s;' % file
+    })

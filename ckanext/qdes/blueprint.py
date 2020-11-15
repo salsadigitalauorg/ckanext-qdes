@@ -64,4 +64,43 @@ def dashboard_review_datasets():
     return render('user/dashboard_review_datasets.html', extra_vars=extra_vars)
 
 
+def dashboard_reports():
+    # Only sysadmin can access.
+    if not g.userobj.sysadmin:
+        abort(404, 'Not found')
+
+    if request.method == 'POST':
+        # Get the submitted data.
+        data = clean_dict(dict_fns.unflatten(tuplize_dict(parse_params(request.form))))
+
+        # Get the rows.
+        available_actions = {
+            'qdes_datasets_not_updated': 'not-updated',
+            'qdes_datasets_with_empty_recommended_fields': 'recommended',
+            'qdes_datasets_with_invalid_urls': 'invalid-urls',
+            'qdes_datasets_not_reviewed': 'not-reviewed',
+        }
+        if data.get('audit_type') in available_actions:
+            rows = get_action(data.get('audit_type'))({}, {'org_id': data['org_id']})
+            file = helpers.qdes_generate_csv(available_actions.get(data.get('audit_type')), rows)
+            type = 'csv'
+
+        else:
+            file = get_action('qdes_report_all')({}, {'available_actions': available_actions, 'org_id': data['org_id']})
+            type = 'zip'
+
+        if file:
+            # Send to browser.
+            return helpers.qdes_send_file_to_browser(file, type)
+        else:
+            h.flash_error('No report can be generated, data is empty.')
+            return h.redirect_to('/dashboard/reports')
+
+    extra_vars = {
+        'user_dict': get_action('user_show')({}, {'id': g.userobj.id}),
+    }
+    return render('user/dashboard_reports.html', extra_vars=extra_vars)
+
+
 qdes.add_url_rule(u'/dashboard/review-datasets', view_func=dashboard_review_datasets, methods=[u'GET', u'POST'])
+qdes.add_url_rule(u'/dashboard/reports', view_func=dashboard_reports, methods=[u'GET', u'POST'])
