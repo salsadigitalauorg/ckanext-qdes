@@ -4,7 +4,7 @@ import logging
 
 from ckanext.qdes import blueprint, helpers
 from ckanext.qdes.cli import get_commands
-from ckanext.qdes.logic.action import get
+from ckanext.qdes.logic.action import get, create
 from pprint import pformat
 
 log = logging.getLogger(__name__)
@@ -51,6 +51,7 @@ class QdesPlugin(plugins.SingletonPlugin):
             'qdes_datasets_with_invalid_urls': get.qdes_datasets_with_invalid_urls,
             'qdes_datasets_not_reviewed': get.qdes_datasets_not_reviewed,
             'qdes_report_all': get.qdes_report_all,
+            'create_review_datasets_job': create.review_datasets_job
         }
 
     # IClick
