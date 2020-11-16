@@ -11,6 +11,7 @@ from ckan.model.package import Package
 from ckan.model.package_extra import PackageExtra
 from ckan.model.group import Group, Member
 from ckan.plugins.toolkit import config
+from ckanext.qdes import constants
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from flask import Response
@@ -49,7 +50,7 @@ def qdes_organization_list(user_id=None):
 
 
 def qdes_get_dataset_review_period():
-    return config.get('ckanext.qdes_schema.dataset_review_period', 1)
+    return config.get('ckanext.qdes_schema.dataset_review_period', constants.DEFAULT_DATASET_REVIEW_PERIOD)
 
 
 def qdes_review_datasets(org_id=None):

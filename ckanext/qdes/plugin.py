@@ -14,6 +14,7 @@ class QdesPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.IBlueprint)
     plugins.implements(plugins.ITemplateHelpers)
+    plugins.implements(plugins.IClick)
     plugins.implements(plugins.IActions)
     plugins.implements(plugins.IClick)
 
@@ -34,12 +35,17 @@ class QdesPlugin(plugins.SingletonPlugin):
             'qdes_review_due_date': helpers.qdes_review_due_date,
             'qdes_get_dataset_review_period': helpers.qdes_get_dataset_review_period,
             'qdes_organization_list': helpers.qdes_organization_list,
-            'qdes_render_date_with_offset': helpers.qdes_render_date_with_offset
+            'qdes_render_date_with_offset': helpers.qdes_render_date_with_offset,
         }
+
+    # IClick
+    def get_commands(self):
+        return get_commands()
 
     # IActions
     def get_actions(self):
         return {
+            'get_review_datasets': get.review_datasets,
             'qdes_datasets_not_updated': get.qdes_datasets_not_updated,
             'qdes_datasets_with_empty_recommended_fields': get.qdes_datasets_with_empty_recommended_fields,
             'qdes_datasets_with_invalid_urls': get.qdes_datasets_with_invalid_urls,
