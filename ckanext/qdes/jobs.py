@@ -1,7 +1,12 @@
-import logging
 import ckan.plugins.toolkit as toolkit
+import click
+import logging
+import os
+import shutil
 
-from ckanext.qdes import helpers
+from ckan.common import config as cfg
+from ckanext.qdes import helpers, constants
+from datetime import datetime
 
 get_action = toolkit.get_action
 render = toolkit.render
@@ -38,3 +43,57 @@ def review_datasets():
                 body = render('emails/body/review_datasets.txt', {'datasets': datasets})
                 body_html = render('emails/body/review_datasets.html', {'datasets': datasets})
                 toolkit.enqueue_job(toolkit.mail_recipient, [recipient_name, recipient_email, subject, body, body_html])
+
+
+def generate_reports():
+    site_user = get_action(u'get_site_user')({u'ignore_auth': True}, {})
+    context = {u'user': site_user[u'name']}
+
+    # Generate csv files.
+    available_actions = {
+        'qdes_datasets_not_updated': 'not-updated',
+        'qdes_datasets_with_empty_recommended_fields': 'recommended',
+        'qdes_datasets_with_invalid_urls': 'invalid-urls',
+        'qdes_datasets_not_reviewed': 'not-reviewed',
+    }
+    csv_files = []
+    for report in available_actions:
+        csv_file = helpers.qdes_generate_csv(available_actions.get(report), get_action(report)(context, {'org_id': None}))
+
+        if csv_file:
+            csv_files.append(csv_file)
+
+    if not csv_files:
+        click.secho(u"No report generated, data is empty.", fg=u"green")
+        return
+
+    # Create the destination directory.
+    try:
+        reports_dir = constants.REPORT_PATH
+        if not os.path.exists(reports_dir):
+            os.makedirs(reports_dir)
+
+        current_backup_dir = reports_dir + '/' + datetime.today().strftime('%Y-%m-%d')
+        if os.path.exists(current_backup_dir):
+            shutil.rmtree(current_backup_dir)
+
+        os.makedirs(current_backup_dir)
+    except Exception as e:
+        log.error(str(e))
+        return
+
+    # Move csv files to destination.
+    for csv_file in csv_files:
+        shutil.move(constants.TMP_PATH + '/' + csv_file, current_backup_dir + '/' + csv_file)
+
+    # Remove older backup.
+    config_value = int(cfg.get('ckanext.qdes.max_old_backup', 50))
+    reports_dir = os.listdir(constants.REPORT_PATH)
+    reports_dir.sort(reverse=True)
+
+    if len(reports_dir) > config_value:
+        del reports_dir[:config_value]
+        for dir in reports_dir:
+            shutil.rmtree(constants.REPORT_PATH + '/' + dir)
+
+    click.secho(u"Reports generated", fg=u"green")

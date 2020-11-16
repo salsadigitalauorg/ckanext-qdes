@@ -136,9 +136,10 @@ def qdes_datasets_with_empty_recommended_fields(context, config={}):
             contact_point = point_of_contacts.get(contact_point_pos)
 
             # Build row.
-            row = qdes_logic_helpers \
-                .qdes_empty_recommended_field_row(package, contact_point, missing_values)
-            rows.append(row)
+            if missing_values:
+                row = qdes_logic_helpers \
+                    .qdes_empty_recommended_field_row(package, contact_point, missing_values)
+                rows.append(row)
 
             # Check dataset resource metadata fields.
             for resource in package.get('resources', []):
@@ -147,9 +148,10 @@ def qdes_datasets_with_empty_recommended_fields(context, config={}):
                     .qdes_check_recommended_field_value(resource, dataset_resource_recommended_fields)
 
                 # Build row.
-                row = qdes_logic_helpers \
-                    .qdes_empty_recommended_field_row(package, contact_point, missing_values, resource)
-                rows.append(row)
+                if missing_values:
+                    row = qdes_logic_helpers \
+                        .qdes_empty_recommended_field_row(package, contact_point, missing_values, resource)
+                    rows.append(row)
 
 
     return rows
