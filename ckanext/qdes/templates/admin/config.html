@@ -9,7 +9,7 @@
         id='field-ckanext.qdes_schema.dataset_review_period',
         label=_('Dataset review period (months)'),
         placeholder='Enter period as a number of months',
-        value=data['ckanext.qdes_schema.dataset_review_period'] if data['ckanext.qdes_schema.dataset_review_period'] else 1,
+        value=data['ckanext.qdes_schema.dataset_review_period'] if data['ckanext.qdes_schema.dataset_review_period'] else 12,
         error=errors['ckanext.qdes_schema.dataset_review_period']) }}
 
     {{ form.input(
