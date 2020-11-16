@@ -16,6 +16,7 @@ class QdesPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.ITemplateHelpers)
     plugins.implements(plugins.IClick)
     plugins.implements(plugins.IActions)
+    plugins.implements(plugins.IClick)
 
     # IConfigurer
     def update_config(self, config_):
@@ -51,3 +52,7 @@ class QdesPlugin(plugins.SingletonPlugin):
             'qdes_datasets_not_reviewed': get.qdes_datasets_not_reviewed,
             'qdes_report_all': get.qdes_report_all,
         }
+
+    # IClick
+    def get_commands(self):
+        return get_commands()

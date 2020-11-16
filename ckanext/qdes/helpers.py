@@ -20,7 +20,6 @@ from sqlalchemy import cast, asc, DateTime
 from pprint import pformat
 
 log = logging.getLogger(__name__)
-tmp_dir = '/app/src/ckanext-qdes/ckanext/qdes/tmp/'
 
 
 def utcnow_as_string():
@@ -107,7 +106,7 @@ def qdes_generate_csv(title, rows):
         for key in rows[0]:
             fieldnames.append(key)
 
-        with open(tmp_dir + filename, mode='w') as csv_file:
+        with open(constants.TMP_PATH + '/' + filename, mode='w') as csv_file:
             csv_writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
             csv_writer.writeheader()
             for row in rows:
@@ -121,28 +120,30 @@ def qdes_zip_csv_files(files):
     Create a zip file to ./tmp directory and return the zip filename.
     """
     filename = 'backup-' + str(datetime.utcnow().timestamp()) + '.zip'
-    zipf = zipfile.ZipFile(tmp_dir + filename, 'w', zipfile.ZIP_DEFLATED)
+    zipf = zipfile.ZipFile(constants.TMP_PATH + '/' + filename, 'w', zipfile.ZIP_DEFLATED)
 
     for file in files:
-        zipf.write(tmp_dir + file, file)
+        zipf.write(constants.TMP_PATH + '/' + file, file)
 
         # Delete the csv files.
-        os.remove(tmp_dir + file)
+        os.remove(constants.TMP_PATH + '/' + file)
 
     zipf.close()
 
     return filename
 
 
-def qdes_send_file_to_browser(file, type):
+def qdes_send_file_to_browser(file, type, remove=True):
     u"""
     Send the file to browser, and remove it.
     """
-    with open(os.path.join(tmp_dir, file), 'rb') as f:
+    with open(file, 'rb') as f:
         data = f.readlines()
-    os.remove(os.path.join(tmp_dir, file))
+
+    if remove:
+        os.remove(file)
 
     return Response(data, headers={
         'Content-Type': 'application/zip' if type == 'zip' else 'text/csv',
-        'Content-Disposition': 'attachment; filename=%s;' % file
+        'Content-Disposition': 'attachment; filename=%s;' % os.path.basename(file)
     })

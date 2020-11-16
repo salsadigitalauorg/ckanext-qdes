@@ -2,11 +2,13 @@ import ckan.logic as logic
 import ckan.plugins.toolkit as toolkit
 import ckan.lib.navl.dictization_functions as dict_fns
 import logging
+import os
 
-from ckan.lib.base import abort
 from ckan.common import g
-from flask import Blueprint
+from ckan.lib.base import abort
 from ckanext.qdes import helpers
+from ckanext.qdes import constants
+from flask import Blueprint
 from pprint import pformat
 
 h = toolkit.h
@@ -45,7 +47,8 @@ def dashboard_review_datasets():
 
         for package_id in data['dataset']:
             try:
-                get_action('package_patch')({'defer_commit': defer_commit}, {'id': package_id, 'metadata_review_date': helpers.utcnow_as_string()})
+                get_action('package_patch')({'defer_commit': defer_commit},
+                                            {'id': package_id, 'metadata_review_date': helpers.utcnow_as_string()})
             except Exception as e:
                 log.error(str(e))
                 errors.append({'id': package_id, 'message': str(e)})
@@ -91,7 +94,7 @@ def dashboard_reports():
 
         if file:
             # Send to browser.
-            return helpers.qdes_send_file_to_browser(file, type)
+            return helpers.qdes_send_file_to_browser(constants.TMP_PATH + '/' + file, type)
         else:
             h.flash_error('No report can be generated, data is empty.')
             return h.redirect_to('/dashboard/reports')
@@ -102,5 +105,37 @@ def dashboard_reports():
     return render('user/dashboard_reports.html', extra_vars=extra_vars)
 
 
+def reports(type):
+    types = {
+        'not-updated': 'not-updated',
+        'not-reviewed': 'not-reviewed',
+        'invalid-uris': 'invalid-urls',
+        'incomplete-recommended': 'recommended',
+    }
+
+    if not type in types:
+        abort(404, 'Not found')
+
+    # Get the latest report directory.
+    reports_dir = os.listdir(constants.REPORT_PATH)
+    if not reports_dir:
+        abort(404, 'Not found')
+
+    reports_dir.sort(reverse=True)
+    latest_dir = constants.REPORT_PATH + '/' + reports_dir[0] + '/'
+
+    # Get the csv file.
+    csv_files = os.listdir(latest_dir)
+    csv_file = ''
+    for file in csv_files:
+        if types.get(type) in file:
+            csv_file = file
+            break
+
+    # Send to browser but don't remove it.
+    return helpers.qdes_send_file_to_browser(latest_dir + csv_file, 'csv', False)
+
+
 qdes.add_url_rule(u'/dashboard/review-datasets', view_func=dashboard_review_datasets, methods=[u'GET', u'POST'])
 qdes.add_url_rule(u'/dashboard/reports', view_func=dashboard_reports, methods=[u'GET', u'POST'])
+qdes.add_url_rule(u'/reports/<type>', view_func=reports, methods=[u'GET'])

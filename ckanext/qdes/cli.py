@@ -1,8 +1,27 @@
+import ckan.plugins.toolkit as toolkit
+import ckanext.qdes.jobs as jobs
+import os
 import click
 import logging
-import ckanext.qdes.jobs as jobs
+
+from ckan.plugins.toolkit import get_action
+from pprint import pformat
 
 log = logging.getLogger(__name__)
+
+
+@click.command(u"generate-audit-reports")
+@click.pass_context
+def generate_audit_reports(context):
+    u"""
+    Generate audit reports.
+    """
+    try:
+        flask_app = context.meta['flask_app']
+        with flask_app.test_request_context():
+            jobs.generate_reports()
+    except Exception as e:
+        log.error(e)
 
 
 @click.command(u"review-datasets")
@@ -24,4 +43,4 @@ def review_datasets(ctx):
 
 
 def get_commands():
-    return [review_datasets]
+    return [generate_audit_reports, review_datasets]
