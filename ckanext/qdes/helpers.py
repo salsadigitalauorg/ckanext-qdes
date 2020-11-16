@@ -49,7 +49,7 @@ def qdes_organization_list(user_id=None):
 
 
 def qdes_get_dataset_review_period():
-    return config.get('ckanext.qdes_schema.dataset_review_period', constants.DEFAULT_DATASET_REVIEW_PERIOD)
+    return int(config.get('ckanext.qdes_schema.dataset_review_period', constants.DEFAULT_DATASET_REVIEW_PERIOD))
 
 
 def qdes_review_datasets(org_id=None):

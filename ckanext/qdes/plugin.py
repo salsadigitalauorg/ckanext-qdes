@@ -24,6 +24,19 @@ class QdesPlugin(plugins.SingletonPlugin):
         toolkit.add_public_directory(config_, 'public')
         toolkit.add_resource('fanstatic', 'qdes')
 
+    # IConfigurer
+    def update_config_schema(self, schema):
+        ignore_missing = toolkit.get_validator('ignore_missing')
+        is_positive_integer = toolkit.get_validator('is_positive_integer')
+
+        schema.update({
+            'ckanext.qdes_schema.dataset_review_period': [ignore_missing, is_positive_integer],
+            'ckanext.qdes_schema.dataset_audit_period': [ignore_missing, is_positive_integer],
+            'ckanext.qdes_schema.dataset_audit_period_last_run': [ignore_missing],
+        })
+
+        return schema
+
     # IBlueprint
     def get_blueprint(self):
         return blueprint.qdes

@@ -1,0 +1,35 @@
+{% ckan_extends %}
+
+{% import 'macros/form.html' as form %}
+
+{% block admin_form %}
+    {{ super() }}
+    {{ form.input(
+        'ckanext.qdes_schema.dataset_review_period',
+        id='field-ckanext.qdes_schema.dataset_review_period',
+        label=_('Dataset review period (months)'),
+        placeholder='Enter period as a number of months',
+        value=data['ckanext.qdes_schema.dataset_review_period'] if data['ckanext.qdes_schema.dataset_review_period'] else 1,
+        error=errors['ckanext.qdes_schema.dataset_review_period']) }}
+
+    {{ form.input(
+        'ckanext.qdes_schema.dataset_audit_period',
+        id='field-ckanext.qdes_schema.dataset_audit_period',
+        label=_('Dataset audit period (months)'),
+        placeholder='Enter period as a number of months',
+        value=data['ckanext.qdes_schema.dataset_audit_period'] if data['ckanext.qdes_schema.dataset_audit_period'] else 1,
+        error=errors['ckanext.qdes_schema.dataset_audit_period']) }}
+{% endblock %}
+
+
+{% block admin_form_help %}
+    {{ super() }}
+    <p>
+        <strong>Dataset review period (months):</strong><br/>
+        Enter period as a number of months
+    </p>
+    <p>
+        <strong>Dataset audit period (months):</strong><br/>
+        Enter period as a number of months
+    </p>
+{% endblock %}
