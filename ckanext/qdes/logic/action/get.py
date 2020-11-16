@@ -27,10 +27,10 @@ def review_datasets(context, data_dict):
         cls = model.PackageExtra
         dataset_review_period = data_dict.get('dataset_review_period', helpers.qdes_get_dataset_review_period())
         review_date = datetime.utcnow() - relativedelta(months=dataset_review_period)
-
+        # Find package_ids with metadata_review_date less then and equal than the review_date
         query = model.PackageExtra().Session.query(cls) \
             .filter(cls.key == 'metadata_review_date') \
-            .filter(func.date(cls.value) >= func.date(review_date)) \
+            .filter(func.date(cls.value) <= func.date(review_date)) \
             .filter(cls.state == 'active')
 
         return [get_action('package_show')(context, {'id': package_extra.package_id, }) for package_extra in query.all()]
