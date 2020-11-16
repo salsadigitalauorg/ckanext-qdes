@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 def review_datasets_job(context, data_dict):
     check_access('sysadmin', context)
     try:
-        jobs.review_datasets()
+        jobs.review_datasets(data_dict)
         return 'Successfully submitted review_datasets job'
     except Exception as e:
         log.error(e)

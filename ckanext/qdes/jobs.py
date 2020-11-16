@@ -13,11 +13,12 @@ render = toolkit.render
 log = logging.getLogger(__name__)
 
 
-def review_datasets():
+def review_datasets(data_dict={}):
     site_user = get_action(u'get_site_user')({u'ignore_auth': True}, {})
     context = {u'user': site_user[u'name']}
 
-    review_datasets = get_action('get_review_datasets')(context, {'dataset_review_period': helpers.qdes_get_dataset_review_period()})
+    # Action 'get_review_datasets' defaults to using  config value 'ckanext.qdes_schema.dataset_review_period' or 12 months if not set
+    review_datasets = get_action('get_review_datasets')(context, data_dict)
 
     contact_points = {}
     for review_dataset in review_datasets:
