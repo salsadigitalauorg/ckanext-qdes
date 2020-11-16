@@ -8,7 +8,6 @@ check_access = toolkit.check_access
 log = logging.getLogger(__name__)
 
 
-@toolkit.side_effect_free
 def review_datasets_job(context, data_dict):
     check_access('sysadmin', context)
     try:
