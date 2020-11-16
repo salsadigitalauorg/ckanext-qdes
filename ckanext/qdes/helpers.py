@@ -49,7 +49,12 @@ def qdes_organization_list(user_id=None):
 
 
 def qdes_get_dataset_review_period():
-    return int(config.get('ckanext.qdes_schema.dataset_review_period', constants.DEFAULT_DATASET_REVIEW_PERIOD))
+    period = config.get('ckanext.qdes_schema.dataset_review_period', constants.DEFAULT_DATASET_REVIEW_PERIOD)
+    # For some reason, dev database is return empty string.
+    if not period:
+        period = constants.DEFAULT_DATASET_REVIEW_PERIOD
+        
+    return int(period)
 
 
 def qdes_review_datasets(org_id=None):
