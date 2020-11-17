@@ -7,6 +7,7 @@ import shutil
 from ckan.common import config as cfg
 from ckanext.qdes import helpers, constants
 from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
 get_action = toolkit.get_action
 render = toolkit.render
@@ -47,6 +48,21 @@ def review_datasets(data_dict={}):
 
 
 def generate_reports():
+    # Get last run.
+    last_run_timestamp = cfg.get('ckanext.qdes_schema.dataset_audit_period_last_run', None)
+    if last_run_timestamp:
+        last_run_date = datetime.fromtimestamp(float(last_run_timestamp))
+
+        log.debug('last_run_date: ' + str(last_run_date))
+
+        # Validate last run against dataset_audit_period.
+        audit_period = int(cfg.get('ckanext.qdes_schema.dataset_audit_period', 1))
+        audit_period_date = datetime.utcnow() - relativedelta(months=audit_period)
+
+        if last_run_date >= audit_period_date:
+            click.secho(u"Reports not generated, last run date within audit_period_date " + str(audit_period_date), fg=u"red")
+            return
+
     site_user = get_action(u'get_site_user')({u'ignore_auth': True}, {})
     context = {u'user': site_user[u'name']}
 
@@ -96,5 +112,11 @@ def generate_reports():
         del reports_dir[:config_value]
         for dir in reports_dir:
             shutil.rmtree(constants.REPORT_PATH + '/' + dir)
+
+    # Update last run.
+    last_run_date = datetime.utcnow()
+    get_action('config_option_update')(context, {
+        'ckanext.qdes_schema.dataset_audit_period_last_run': datetime.timestamp(last_run_date)
+    })
 
     click.secho(u"Reports generated", fg=u"green")
