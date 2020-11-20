@@ -95,7 +95,8 @@ def qdes_check_recommended_field_value(entity_dict, recommended_fields):
     missing_values = []
     for field in recommended_fields:
         f_name = field.get('field_name')
-        if entity_dict.get(f_name, None) is None:
+        value = str(entity_dict.get(f_name, ''))
+        if not value.strip():
             missing_values.append(f_name)
 
     return missing_values

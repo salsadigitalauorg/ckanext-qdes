@@ -104,15 +104,16 @@ def qdes_datasets_with_empty_recommended_fields(context, config={}):
 
     # Build rows.
     rows = []
-    i = 1
+    i = 0
+    limit = 10
     has_result = True
     point_of_contacts = {}
     while has_result:
-        packages = get_action('current_package_list_with_resources')(context, {'limit': 10, 'offset': i})
+        packages = get_action('current_package_list_with_resources')(context, {'limit': limit, 'offset': i})
         if not packages:
             has_result = False
         else:
-            i += 1
+            i += limit
 
         for package in packages:
             # Load and cache point of contacts.
