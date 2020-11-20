@@ -77,8 +77,8 @@ def qdes_datasets_not_updated(context, config={}):
             'Dataset creator': extras.get('contact_creator', ''),
             'Point of contact - name': point_of_contacts.get(contact_point_pos).get('Name', ''),
             'Point of contact - email': point_of_contacts.get(contact_point_pos).get('Email', ''),
-            'Dataset creation date': qdes_render_date_with_offset(pkg_dict.get('metadata_created')),
-            'Dataset update date': qdes_render_date_with_offset(pkg_dict.get('metadata_modified')),
+            'Dataset creation date': qdes_render_date_with_offset(extras.get('dataset_creation_date', pkg_dict.get('metadata_created', None))),
+            'Dataset update date': qdes_render_date_with_offset(extras.get('dataset_last_modified_date', None)),
             'Organisation name': org_dict.get('title', ''),
         })
 
