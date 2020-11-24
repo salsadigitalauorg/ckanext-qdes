@@ -29,7 +29,7 @@ def review_datasets(context, data_dict):
         review_date = datetime.utcnow() - relativedelta(months=dataset_review_period)
         # Find package_ids with metadata_review_date less then and equal than the review_date
         query = model.PackageExtra().Session.query(cls) \
-            .filter(cls.key == 'metadata_review_date') \
+            .filter(cls.key == 'metadata_review_date', func.length(cls.value) > 0) \
             .filter(func.date(cls.value) <= func.date(review_date)) \
             .filter(cls.state == 'active')
 
