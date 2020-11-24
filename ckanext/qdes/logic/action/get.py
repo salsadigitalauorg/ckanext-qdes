@@ -22,18 +22,10 @@ def review_datasets(context, data_dict):
     if not authz.is_sysadmin(context.get('user')) and not authz.has_user_permission_for_some_org(context.get('user'), 'create_dataset'):
         return {'success': False, 'msg': toolkit._('Not authorized')}
 
-    model = context['model']
     try:
-        cls = model.PackageExtra
-        dataset_review_period = data_dict.get('dataset_review_period', helpers.qdes_get_dataset_review_period())
-        review_date = datetime.utcnow() - relativedelta(months=dataset_review_period)
-        # Find package_ids with metadata_review_date less then and equal than the review_date
-        query = model.PackageExtra().Session.query(cls) \
-            .filter(cls.key == 'metadata_review_date', func.length(cls.value) > 0) \
-            .filter(func.date(cls.value) <= func.date(review_date)) \
-            .filter(cls.state == 'active')
+        datasets = qdes_logic_helpers.qdes_get_list_of_datasets_not_reviewed()
 
-        return [get_action('package_show')(context, {'id': package_extra.package_id, }) for package_extra in query.all()]
+        return [get_action('package_show')(context, {'id': dataset.id, }) for dataset in datasets]
     except Exception as e:
         log.error(str(e))
 
@@ -268,7 +260,7 @@ def qdes_datasets_not_reviewed(context, config):
 
         rows.append({
             'Dataset name': pkg_dict.get('title', pkg_dict.get('name', '')),
-            'Link to dataset (URI)': url_for('dataset.read', id=pkg_dict.get('id'), _external=True),
+            'Link to dataset (URI)': url_for('dataset.read', id=pkg_dict.get('name'), _external=True),
             'Dataset creator': extras.get('contact_creator', ''),
             'Point of contact - name': point_of_contacts.get(contact_point_pos).get('Name', ''),
             'Point of contact - email': point_of_contacts.get(contact_point_pos).get('Email', ''),
