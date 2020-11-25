@@ -27,6 +27,9 @@ def utcnow_as_string():
 
 
 def qdes_render_date_with_offset(date_value_utc):
+    if not date_value_utc:
+        return ''
+
     offset = render_datetime(date_value_utc, date_format='%z')
     return render_datetime(date_value_utc, date_format='%Y-%m-%dT%H:%M:%S') + offset[:3] + ':' + offset[-2:]
 

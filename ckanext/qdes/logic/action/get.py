@@ -69,8 +69,8 @@ def qdes_datasets_not_updated(context, config={}):
             'Dataset creator': extras.get('contact_creator', ''),
             'Point of contact - name': point_of_contacts.get(contact_point_pos).get('Name', ''),
             'Point of contact - email': point_of_contacts.get(contact_point_pos).get('Email', ''),
-            'Dataset creation date': qdes_render_date_with_offset(pkg_dict.get('metadata_created')),
-            'Dataset update date': qdes_render_date_with_offset(pkg_dict.get('metadata_modified')),
+            'Dataset creation date': qdes_render_date_with_offset(extras.get('dataset_creation_date', pkg_dict.get('metadata_created', None))),
+            'Dataset update date': qdes_render_date_with_offset(extras.get('dataset_last_modified_date', None)),
             'Organisation name': org_dict.get('title', ''),
         })
 
@@ -96,15 +96,16 @@ def qdes_datasets_with_empty_recommended_fields(context, config={}):
 
     # Build rows.
     rows = []
-    i = 1
+    i = 0
+    limit = 10
     has_result = True
     point_of_contacts = {}
     while has_result:
-        packages = get_action('current_package_list_with_resources')(context, {'limit': 10, 'offset': i})
+        packages = get_action('current_package_list_with_resources')(context, {'limit': limit, 'offset': i})
         if not packages:
             has_result = False
         else:
-            i += 1
+            i += limit
 
         for package in packages:
             # Load and cache point of contacts.
