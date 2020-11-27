@@ -267,7 +267,7 @@ def qdes_datasets_not_reviewed(context, config):
             'Dataset creator': extras.get('contact_creator', ''),
             'Point of contact - name': point_of_contacts.get(contact_point_pos).get('Name', ''),
             'Point of contact - email': point_of_contacts.get(contact_point_pos).get('Email', ''),
-            'Metadata review date': qdes_render_date_with_offset(extras.get('metadata_review_date')),
+            'Metadata review date': qdes_render_date_with_offset(extras.get('metadata_review_date'), False),
             'Organisation name': org_dict.get('title', ''),
         })
 
