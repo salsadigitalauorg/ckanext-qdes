@@ -213,7 +213,9 @@ def qdes_datasets_with_invalid_urls(context, config={}):
                     continue
 
         # Load and cache point of contacts.
-        contact_point_pos = entity_dict.get('contact_point', None)
+        contact_point_pos = entity_dict.get('contact_point', None) \
+            if invalid_uri.get('type') == 'dataset' \
+            else parent_entity_dict.get('contact_point', None)
         if not contact_point_pos in point_of_contacts:
             point_of_contacts[contact_point_pos] = qdes_logic_helpers \
                 .get_point_of_contact(context, contact_point_pos) if contact_point_pos else {}
