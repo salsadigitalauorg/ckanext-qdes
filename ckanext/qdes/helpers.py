@@ -26,12 +26,16 @@ def utcnow_as_string():
     return datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')
 
 
-def qdes_render_date_with_offset(date_value_utc):
+def qdes_render_date_with_offset(date_value_utc, time=True):
     if not date_value_utc:
         return ''
 
     offset = render_datetime(date_value_utc, date_format='%z')
-    return render_datetime(date_value_utc, date_format='%Y-%m-%dT%H:%M:%S') + offset[:3] + ':' + offset[-2:]
+
+    if time:
+        return render_datetime(date_value_utc, date_format='%Y-%m-%dT%H:%M:%S') + offset[:3] + ':' + offset[-2:]
+
+    return render_datetime(date_value_utc, date_format='%Y-%m-%d')
 
 
 def qdes_organization_list(user_id=None):
@@ -108,7 +112,8 @@ def qdes_generate_csv(title, rows):
     """
     filename = ''
     if rows:
-        filename = 'audit-' + str(datetime.utcnow().strftime('%Y-%m-%dT%H-%M-%S')) + '-' + title + '.csv'
+        date = render_datetime(datetime.utcnow(), date_format='%Y-%m-%d')
+        filename = 'audit-' + str(date) + '-' + title + '.csv'
 
         fieldnames = []
         for key in rows[0]:

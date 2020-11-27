@@ -213,7 +213,9 @@ def qdes_datasets_with_invalid_urls(context, config={}):
                     continue
 
         # Load and cache point of contacts.
-        contact_point_pos = entity_dict.get('contact_point', None)
+        contact_point_pos = entity_dict.get('contact_point', None) \
+            if invalid_uri.get('type') == 'dataset' \
+            else parent_entity_dict.get('contact_point', None)
         if not contact_point_pos in point_of_contacts:
             point_of_contacts[contact_point_pos] = qdes_logic_helpers \
                 .get_point_of_contact(context, contact_point_pos) if contact_point_pos else {}
@@ -265,7 +267,7 @@ def qdes_datasets_not_reviewed(context, config):
             'Dataset creator': extras.get('contact_creator', ''),
             'Point of contact - name': point_of_contacts.get(contact_point_pos).get('Name', ''),
             'Point of contact - email': point_of_contacts.get(contact_point_pos).get('Email', ''),
-            'Metadata review date': qdes_render_date_with_offset(extras.get('metadata_review_date')),
+            'Metadata review date': qdes_render_date_with_offset(extras.get('metadata_review_date'), False),
             'Organisation name': org_dict.get('title', ''),
         })
 
