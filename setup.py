@@ -87,6 +87,7 @@ setup(
     entry_points='''
         [ckan.plugins]
         qdes=ckanext.qdes.plugin:QdesPlugin
+        qdes_access=ckanext.qdes.access.plugin:QdesAccessPlugin
 
         [babel.extractors]
         ckan = ckan.lib.extract:extract_ckan
