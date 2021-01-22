@@ -19,7 +19,6 @@ class QdesAuthMiddleware(object):
             # home, login, password reset, saml2login and acs (SAML Assertion Consumer Service)
             # But still allow unauthenticated access to assets and API
             # API authentication will be handled by API auth/actions but some have public access
-            log.info('QdesAuthMiddleware: PATH_INFO = {}'.format(environ['PATH_INFO']))
             if environ['PATH_INFO'] not in ['/', '/user/login', '/user/reset', '/user/saml2login', '/acs'] \
                     and not environ['PATH_INFO'].startswith('/base') \
                     and not environ['PATH_INFO'].startswith('/api') \
@@ -31,8 +30,9 @@ class QdesAuthMiddleware(object):
                 status = "401 Unauthorized"
                 headers = [('Location', '/user.login'),
                            ('Content-Length', '0')]
-                log.info('QdesAuthMiddleware: Unauthenticated page {} accessed, redirecting to login'.format(environ['PATH_INFO']))
                 start_response(status, headers)
+                # Return now as we want to end the request
+                return []
 
         return self.app(environ, start_response)
 
@@ -50,7 +50,7 @@ class QdesAuthMiddleware(object):
             # Forget HTTP Auth credentials (they have spaces).
             if u' ' in apikey:
                 apikey = u''
-        log.info('QdesAuthMiddleware: apikey = {}'.format(apikey))
+
         if not apikey:
             return None
 
@@ -61,5 +61,4 @@ class QdesAuthMiddleware(object):
         if not user:
             user = api_token.get_user_from_token(apikey)
 
-        log.info('QdesAuthMiddleware: apikey user = {}'.format(user))
         return user
