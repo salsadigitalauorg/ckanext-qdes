@@ -23,7 +23,6 @@ def request_reset():
     There are a few modifications to check if the user requesting a password reset is a sysadmin
     Only sysadmins are sent a reset link email
     '''
-    log.debug('QdesRequestResetView request_reset')
     RequestResetView._prepare(None)
     id = request.form.get(u'user')
     if id in (None, u''):
