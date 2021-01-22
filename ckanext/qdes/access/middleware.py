@@ -14,7 +14,6 @@ class QdesAuthMiddleware(object):
 
     def __call__(self, environ, start_response):
         # if logged in via browser cookies or API key, all pages accessible
-        log.info('QdesAuthMiddleware: environ = {}'.format(environ))
         if 'repoze.who.identity' not in environ and not self._get_user_for_apikey(environ):
             # The only pages unauthenticated users have access to are below
             # home, login, password reset, saml2login and acs (SAML Assertion Consumer Service)
@@ -32,7 +31,7 @@ class QdesAuthMiddleware(object):
                 status = "401 Unauthorized"
                 headers = [('Location', '/user.login'),
                            ('Content-Length', '0')]
-
+                log.info('QdesAuthMiddleware: Unauthenticated page {} accessed, redirecting to login'.format(environ['PATH_INFO']))
                 start_response(status, headers)
 
         return self.app(environ, start_response)
@@ -51,6 +50,7 @@ class QdesAuthMiddleware(object):
             # Forget HTTP Auth credentials (they have spaces).
             if u' ' in apikey:
                 apikey = u''
+        log.info('QdesAuthMiddleware: apikey = {}'.format(apikey))
         if not apikey:
             return None
 
@@ -60,4 +60,6 @@ class QdesAuthMiddleware(object):
 
         if not user:
             user = api_token.get_user_from_token(apikey)
+
+        log.info('QdesAuthMiddleware: apikey user = {}'.format(user))
         return user
