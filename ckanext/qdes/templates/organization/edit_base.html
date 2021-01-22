@@ -1,4 +1,4 @@
-{% extends "page.html" %}
+{% ckan_extends %}
 
 {% block content_primary_nav %}
   {{ h.build_nav_icon(group_type + '.edit', _('Edit'), id=group_dict.name, icon='pencil-square-o') }}
