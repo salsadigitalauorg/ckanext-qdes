@@ -14,11 +14,13 @@ class QdesAuthMiddleware(object):
 
     def __call__(self, environ, start_response):
         # if logged in via browser cookies or API key, all pages accessible
+        log.info('QdesAuthMiddleware: environ = {}'.format(environ))
         if 'repoze.who.identity' not in environ and not self._get_user_for_apikey(environ):
             # The only pages unauthenticated users have access to are below
             # home, login, password reset, saml2login and acs (SAML Assertion Consumer Service)
             # But still allow unauthenticated access to assets and API
             # API authentication will be handled by API auth/actions but some have public access
+            log.info('QdesAuthMiddleware: PATH_INFO = {}'.format(environ['PATH_INFO']))
             if environ['PATH_INFO'] not in ['/', '/user/login', '/user/reset', '/user/saml2login', '/acs'] \
                     and not environ['PATH_INFO'].startswith('/base') \
                     and not environ['PATH_INFO'].startswith('/api') \
