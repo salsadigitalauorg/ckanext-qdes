@@ -102,6 +102,15 @@ def qdes_review_due_date(review_date):
     Return due from given date.
     """
     dataset_review_period = qdes_get_dataset_review_period()
+
+    # Remove .000000 from the date time.
+    if len(review_date.split('.')) > 1:
+        review_date = review_date.split('.')[0]
+
+    # Some values doesn't have time in it, let's add 00:00:00 to it.
+    if review_date.find('T') == -1:
+        review_date = review_date + 'T00:00:00'
+
     due_date = datetime.strptime(review_date, '%Y-%m-%dT%H:%M:%S') + relativedelta(months=dataset_review_period)
     return due_date.strftime('%Y-%m-%dT%H:%M:%S')
 
