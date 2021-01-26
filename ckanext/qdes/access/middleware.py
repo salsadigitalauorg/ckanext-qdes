@@ -19,14 +19,16 @@ class QdesAuthMiddleware(object):
             # home, login, password reset, saml2login, acs (SAML Assertion Consumer Service) and user unauthorised
             # But still allow unauthenticated access to assets and API
             # API authentication will be handled by API auth/actions but some have public access
-            if environ['PATH_INFO'] not in ['/', '/user/login', '/user/reset', '/user/saml2login', '/acs', '/user/unauthorised'] \
-                    and not environ['PATH_INFO'].startswith('/base') \
-                    and not environ['PATH_INFO'].startswith('/api') \
-                    and not environ['PATH_INFO'].startswith('/webassets') \
-                    and not environ['PATH_INFO'].startswith('/images') \
-                    and not environ['PATH_INFO'].startswith('/css') \
-                    and not environ['PATH_INFO'].startswith('/js') \
-                    and not environ['PATH_INFO'].startswith('/_debug'):
+            if (environ['PATH_INFO'] not in ['/', '/user/login', '/user/saml2login', '/acs', '/user/unauthorised'] \
+                and not environ['PATH_INFO'].startswith('/user/reset')) \
+                and not environ['PATH_INFO'].startswith('/base') \
+                and not environ['PATH_INFO'].startswith('/api') \
+                and not environ['PATH_INFO'].startswith('/webassets') \
+                and not environ['PATH_INFO'].startswith('/images') \
+                and not environ['PATH_INFO'].startswith('/css') \
+                and not environ['PATH_INFO'].startswith('/js') \
+                and not environ['PATH_INFO'].startswith('/_debug') \
+                and not environ['PATH_INFO'].startswith('/uploads'):
                 status = "401 Unauthorized"
                 headers = [('Location', '/user.login'),
                            ('Content-Length', '0')]
