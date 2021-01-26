@@ -23,7 +23,7 @@ def request_reset():
     There are a few modifications to check if the user requesting a password reset is a sysadmin
     Only sysadmins are sent a reset link email
     '''
-    RequestResetView._prepare(None)
+    RequestResetView._prepare(RequestResetView())
     id = request.form.get(u'user')
     if id in (None, u''):
         h.flash_error(_(u'Email is required'))
