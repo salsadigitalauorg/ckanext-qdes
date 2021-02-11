@@ -1,0 +1,20 @@
+{% extends "admin/base.html" %}
+
+{% import 'macros/form.html' as form %}
+
+{% block primary_content_inner %}
+  <h2 class="hide-heading">
+    {% block page_heading %}{{ _('API Tokens') }}{% endblock %}
+  </h2>
+
+  {% if tokens %}
+    {% snippet 'admin/snippets/api_token_list.html', tokens=tokens%}
+  {% else %}
+    <p class="empty">
+      {{ _('There are no API Tokens.') }}
+    </p>
+  {% endif %}
+
+{% endblock primary_content_inner %}
+
+{% block secondary_content %}{% endblock %}

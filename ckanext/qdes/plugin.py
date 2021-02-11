@@ -24,6 +24,13 @@ class QdesPlugin(plugins.SingletonPlugin):
         toolkit.add_public_directory(config_, 'public')
         toolkit.add_resource('fanstatic', 'qdes')
 
+        toolkit.add_ckan_admin_tab(toolkit.config, 
+                                    'qdes.api_tokens',
+                                    'API Tokens',
+                                    config_var='ckan.admin_tabs', 
+                                    icon=None)
+
+
     # IConfigurer
     def update_config_schema(self, schema):
         ignore_missing = toolkit.get_validator('ignore_missing')

@@ -4,20 +4,22 @@ import ckan.lib.navl.dictization_functions as dict_fns
 import logging
 import os
 
-from ckan.common import g
-from ckan.lib.base import abort
 from ckanext.qdes import helpers
 from ckanext.qdes import constants
 from flask import Blueprint
 from pprint import pformat
 
-h = toolkit.h
 clean_dict = logic.clean_dict
 tuplize_dict = logic.tuplize_dict
 parse_params = logic.parse_params
 get_action = logic.get_action
+
+h = toolkit.h
 render = toolkit.render
 request = toolkit.request
+abort = toolkit.abort
+g = toolkit.g
+
 log = logging.getLogger(__name__)
 qdes = Blueprint('qdes', __name__)
 
@@ -136,6 +138,28 @@ def reports(type):
     return helpers.qdes_send_file_to_browser(latest_dir + csv_file, 'csv', False)
 
 
+def api_tokens():
+    # Only sysadmin can access.
+    if not g.userobj or not g.userobj.sysadmin:
+        abort(404, 'Not found')
+
+    tokens = helpers.get_api_tokens()
+    return render(u'admin/api_tokens.html', extra_vars={"tokens": tokens})
+
+
+def api_token_revoke(jti):
+    # Only sysadmin can access.
+    if not g.userobj or not g.userobj.sysadmin:
+        abort(404, 'Not found')
+
+    get_action(u'api_token_revoke')({}, {u'jti': jti})
+
+    h.flash_success('Revoked API token')
+    return h.redirect_to(u'qdes.api_tokens')
+
+
 qdes.add_url_rule(u'/dashboard/review-datasets', view_func=dashboard_review_datasets, methods=[u'GET', u'POST'])
 qdes.add_url_rule(u'/dashboard/reports', view_func=dashboard_reports, methods=[u'GET', u'POST'])
 qdes.add_url_rule(u'/reports/<type>', view_func=reports, methods=[u'GET'])
+qdes.add_url_rule(u'/ckan-admin/api-tokens', view_func=api_tokens, methods=[u'GET'])
+qdes.add_url_rule(u'/ckan-admin/api-tokens/<jti>/revoke', view_func=api_token_revoke, methods=[u'POST'])
