@@ -3,6 +3,7 @@ import csv
 import time
 import zipfile
 import logging
+import ckan.model as model
 
 from ckan.common import g
 from ckan.lib.helpers import render_datetime
@@ -10,14 +11,14 @@ from ckan.model import Session
 from ckan.model.package import Package
 from ckan.model.package_extra import PackageExtra
 from ckan.model.group import Group, Member
+from ckan.model.api_token import ApiToken
 from ckan.plugins.toolkit import config
 from ckanext.qdes import constants
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from flask import Response
 from sqlalchemy import cast, asc, DateTime
-
-from pprint import pformat
+from ckan.lib.dictization import model_dictize
 
 log = logging.getLogger(__name__)
 
@@ -60,7 +61,7 @@ def qdes_get_dataset_review_period():
     # For some reason, dev database is return empty string.
     if not period:
         period = constants.DEFAULT_DATASET_REVIEW_PERIOD
-        
+
     return int(period)
 
 
@@ -169,3 +170,18 @@ def qdes_send_file_to_browser(file, type, remove=True):
         'Content-Type': 'application/zip' if type == 'zip' else 'text/csv',
         'Content-Disposition': 'attachment; filename=%s;' % os.path.basename(file)
     })
+
+
+def get_api_tokens():
+    query = Session.query(ApiToken)
+    tokens = [
+        {
+            "user_name": token.owner.name,
+            "user_email": token.owner.email,
+            "token_id": token.id,
+            "token_name": token.name,
+            "token_last_access": token.last_access
+        }
+        for token in query.all()
+    ]
+    return tokens
