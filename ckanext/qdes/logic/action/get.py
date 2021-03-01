@@ -108,43 +108,44 @@ def qdes_datasets_with_empty_recommended_fields(context, config={}):
             i += limit
 
         for package in packages:
-            # Load and cache point of contacts.
-            contact_point_pos = package.get('contact_point', None)
-            if not contact_point_pos in point_of_contacts:
-                point_of_contacts[contact_point_pos] = qdes_logic_helpers \
-                    .get_point_of_contact(context, contact_point_pos) if contact_point_pos else {}
+            if package.get('state') == 'active':
+                # Load and cache point of contacts.
+                contact_point_pos = package.get('contact_point', None)
+                if not contact_point_pos in point_of_contacts:
+                    point_of_contacts[contact_point_pos] = qdes_logic_helpers \
+                        .get_point_of_contact(context, contact_point_pos) if contact_point_pos else {}
 
-            # Get package organization.
-            pkg_org = package.get('organization')
+                # Get package organization.
+                pkg_org = package.get('organization')
 
-            # Filter based on org_id or package type.
-            if (org_id and pkg_org.get('id') != org_id) or package.get('type') == 'dataservice':
-                continue
+                # Filter based on org_id or package type.
+                if (org_id and pkg_org.get('id') != org_id) or package.get('type') == 'dataservice':
+                    continue
 
-            # Get missing value fields.
-            missing_values = qdes_logic_helpers \
-                .qdes_check_recommended_field_value(package, dataset_recommended_fields)
-
-            # Get contact point.
-            contact_point = point_of_contacts.get(contact_point_pos)
-
-            # Build row.
-            if missing_values:
-                row = qdes_logic_helpers \
-                    .qdes_empty_recommended_field_row(package, contact_point, missing_values)
-                rows.append(row)
-
-            # Check dataset resource metadata fields.
-            for resource in package.get('resources', []):
                 # Get missing value fields.
                 missing_values = qdes_logic_helpers \
-                    .qdes_check_recommended_field_value(resource, dataset_resource_recommended_fields)
+                    .qdes_check_recommended_field_value(package, dataset_recommended_fields)
+
+                # Get contact point.
+                contact_point = point_of_contacts.get(contact_point_pos)
 
                 # Build row.
                 if missing_values:
                     row = qdes_logic_helpers \
-                        .qdes_empty_recommended_field_row(package, contact_point, missing_values, resource)
+                        .qdes_empty_recommended_field_row(package, contact_point, missing_values)
                     rows.append(row)
+
+                # Check dataset resource metadata fields.
+                for resource in package.get('resources', []):
+                    # Get missing value fields.
+                    missing_values = qdes_logic_helpers \
+                        .qdes_check_recommended_field_value(resource, dataset_resource_recommended_fields)
+
+                    # Build row.
+                    if missing_values:
+                        row = qdes_logic_helpers \
+                            .qdes_empty_recommended_field_row(package, contact_point, missing_values, resource)
+                        rows.append(row)
 
 
     return rows
@@ -220,10 +221,10 @@ def qdes_datasets_with_invalid_urls(context, config={}):
             point_of_contacts[contact_point_pos] = qdes_logic_helpers \
                 .get_point_of_contact(context, contact_point_pos) if contact_point_pos else {}
 
-        if invalid_uri.get('type') == 'dataset':
+        if invalid_uri.get('type') == 'dataset' and entity_dict.get('state') == 'active':
             # Moved to helper function to reduce function size and avoid duplication
             rows.append(qdes_logic_helpers.invalid_uri_csv_row(invalid_uri, point_of_contacts[contact_point_pos] ,entity_dict))
-        elif invalid_uri.get('type') == 'resource':
+        elif invalid_uri.get('type') == 'resource' and parent_entity_dict.get('state') == 'active':
             # Moved to helper function to reduce function size and avoid duplication
             rows.append(qdes_logic_helpers.invalid_uri_csv_row(invalid_uri, point_of_contacts[contact_point_pos], parent_entity_dict, entity_dict))
 
