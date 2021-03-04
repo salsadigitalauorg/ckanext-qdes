@@ -1,0 +1,17 @@
+{% extends "page.html" %}
+
+{% block subtitle %}{{ _('Contact') }}{% endblock %}
+
+{% block breadcrumb_content %}
+  <li class="active">{% link_for _('Contact'), 'qdes.contact' %}</li>
+{% endblock %}
+
+{% block secondary %}{% endblock %}
+{% block primary %}
+  <article class="module" role="main">
+    <div class="module-content">
+      <h1 class="page-heading">{{ _('Contact') }}</h1>
+      {{ h.render_markdown(content) }}
+    </div>
+  </article>
+{% endblock %}

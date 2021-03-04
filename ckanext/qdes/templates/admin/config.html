@@ -19,6 +19,13 @@
         placeholder='Enter period as a number of months',
         value=data['ckanext.qdes_schema.dataset_audit_period'] if data['ckanext.qdes_schema.dataset_audit_period'] else 1,
         error=errors['ckanext.qdes_schema.dataset_audit_period']) }}
+
+    {{ form.markdown(
+        'ckanext.qdes_schema.contact',
+        id='field-ckanext.qdes_schema.contact',
+        label=_('Contact'),
+        value=data['ckanext.qdes_schema.contact'],
+        error=errors['ckanext.qdes_schema.contact']) }}
 {% endblock %}
 
 
@@ -31,5 +38,9 @@
     <p>
         <strong>Dataset audit period (months):</strong><br/>
         Enter period as a number of months
+    </p>
+    <p>
+        <strong>Contact:</strong><br/>
+        Text for contact page.
     </p>
 {% endblock %}
