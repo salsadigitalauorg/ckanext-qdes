@@ -40,6 +40,7 @@ class QdesPlugin(plugins.SingletonPlugin):
             'ckanext.qdes_schema.dataset_review_period': [ignore_missing, is_positive_integer],
             'ckanext.qdes_schema.dataset_audit_period': [ignore_missing, is_positive_integer],
             'ckanext.qdes_schema.dataset_audit_period_last_run': [ignore_missing],
+            'ckanext.qdes_schema.contact': [ignore_missing],
         })
 
         return schema

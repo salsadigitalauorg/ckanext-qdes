@@ -4,6 +4,7 @@ import ckan.lib.navl.dictization_functions as dict_fns
 import logging
 import os
 
+from ckan.common import config
 from ckanext.qdes import helpers
 from ckanext.qdes import constants
 from flask import Blueprint
@@ -158,8 +159,17 @@ def api_token_revoke(jti):
     return h.redirect_to(u'qdes.api_tokens')
 
 
+def contact():
+    # Only logged in user can access.
+    if not g.userobj:
+        abort(404, 'Not found')
+
+    return render(u'contact_page.html', extra_vars={"content": config.get('ckanext.qdes_schema.contact', '')})
+
+
 qdes.add_url_rule(u'/dashboard/review-datasets', view_func=dashboard_review_datasets, methods=[u'GET', u'POST'])
 qdes.add_url_rule(u'/dashboard/reports', view_func=dashboard_reports, methods=[u'GET', u'POST'])
 qdes.add_url_rule(u'/reports/<type>', view_func=reports, methods=[u'GET'])
 qdes.add_url_rule(u'/ckan-admin/api-tokens', view_func=api_tokens, methods=[u'GET'])
 qdes.add_url_rule(u'/ckan-admin/api-tokens/<jti>/revoke', view_func=api_token_revoke, methods=[u'POST'])
+qdes.add_url_rule(u'/contact', view_func=contact, methods=[u'GET'])
