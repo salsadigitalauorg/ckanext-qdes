@@ -1,7 +1,9 @@
+import ckan.lib.email_notifications as email_notifications
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 import logging
 
+from ckan.common import _
 from ckanext.qdes import blueprint, helpers
 from ckanext.qdes.cli import get_commands
 from ckanext.qdes.logic.action import get, create
@@ -57,6 +59,7 @@ class QdesPlugin(plugins.SingletonPlugin):
             'qdes_get_dataset_review_period': helpers.qdes_get_dataset_review_period,
             'qdes_organization_list': helpers.qdes_organization_list,
             'qdes_render_date_with_offset': helpers.qdes_render_date_with_offset,
+            'qdes_activity_stream_detail': helpers.qdes_activity_stream_detail,
         }
 
     # IClick
@@ -72,9 +75,24 @@ class QdesPlugin(plugins.SingletonPlugin):
             'qdes_datasets_with_invalid_urls': get.qdes_datasets_with_invalid_urls,
             'qdes_datasets_not_reviewed': get.qdes_datasets_not_reviewed,
             'qdes_report_all': get.qdes_report_all,
-            'create_review_datasets_job': create.review_datasets_job
+            'create_review_datasets_job': create.review_datasets_job,
+            'user_create': create.user_create
         }
 
     # IClick
     def get_commands(self):
         return get_commands()
+
+
+# Replace _notifications_for_activities function to replace the email subject.
+def update_email_subject(func):
+    def update(activities, user_dict):
+        notifications = func(activities, user_dict)
+        if notifications:
+            notifications[0]['subject'] = _('Ecoscience.QLD Data Catalogue - Activity on Followed Content')
+
+        return notifications
+
+    return update
+
+email_notifications._notifications_for_activities = update_email_subject(email_notifications._notifications_for_activities)
