@@ -5,7 +5,7 @@ import zipfile
 import logging
 import ckan.model as model
 
-from ckan.common import g
+from ckan.common import g, _
 from ckan.lib.helpers import render_datetime
 from ckan.model import Session
 from ckan.model.package import Package
@@ -185,3 +185,15 @@ def get_api_tokens():
         for token in query.all()
     ]
     return tokens
+
+
+def qdes_activity_stream_detail(activity_type):
+    """
+    Performs some replacement and rearrangement of the activity type for display in the activity notification email
+    """
+    activity_type = activity_type.replace('organization', _('organization'))
+    activity_type = activity_type.replace('package', 'dataset')
+    activity_type = activity_type.split()
+    activity_type.reverse()
+
+    return ' '.join(activity_type)
