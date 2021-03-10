@@ -10,3 +10,21 @@
         </li>
     {% endif %}
 {% endblock %}
+
+{% block header_site_navigation %}
+    {% if c.userobj %}
+        {{ super() }}
+    {% endif %}
+{% endblock %}
+
+{% block header_site_search %}
+    {% if c.userobj %}
+        {{ super() }}
+    {% endif %}
+{% endblock %}
+
+{% block header_site_navigation_desktop %}
+    {% if c.userobj %}
+        {{ super() }}
+    {% endif %}
+{% endblock %}
