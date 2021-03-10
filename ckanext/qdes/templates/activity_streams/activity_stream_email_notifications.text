@@ -6,12 +6,13 @@
 {% for activity in activities -%}
     {%- set data = activity['data'] if activity['data'] else None -%}
     {%- set activity_type = activity['activity_type'] if activity['activity_type'] else None -%}
-    {%- set id = activity['object_id'] -%}
     {%- if data -%}
         {%- if data['package'] -%}
             {%- set action = 'dataset_read' -%}
+            {%- set id = data['package']['name'] if data['package']['name'] else activity['object_id'] -%}
         {%- elif data['group'] -%}
             {%- set action = 'organization_read' if data['group']['is_organization'] else 'group_read' -%}
+            {%- set id = data['group']['name'] if data['group']['name'] else activity['object_id'] -%}
         {%- endif -%}
     {%- endif -%}
     {% if action and id %}{{ h.url_for(action, id=id, _external=True) }}{% if activity_type %} ({{ h.qdes_activity_stream_detail(activity_type)|capitalize }}){% endif %}{% endif %}
