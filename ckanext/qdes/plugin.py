@@ -1,3 +1,4 @@
+import ckan.model as model
 import ckan.lib.email_notifications as email_notifications
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
@@ -87,6 +88,22 @@ class QdesPlugin(plugins.SingletonPlugin):
 # Replace _notifications_for_activities function to replace the email subject.
 def update_email_subject(func):
     def update(activities, user_dict):
+        # Get package name.
+        for activity in activities:
+            data = activity.get('data', None)
+            if data:
+                if data.get('package', None):
+                    package = model.Package.get(activity.get('object_id'))
+                    if package:
+                        activity['data']['package']['name'] = package.name
+                elif data.get('group', None):
+                    group = model.Group.get(activity.get('object_id'))
+                    if group:
+                        activity['data']['group']['name'] = group.name
+
+                        if not group.type == 'group':
+                            activity['data']['group']['is_organization'] = True
+
         notifications = func(activities, user_dict)
         if notifications:
             notifications[0]['subject'] = _('Ecoscience.QLD Data Catalogue - Activity on Followed Content')
