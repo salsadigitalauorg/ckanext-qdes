@@ -20,6 +20,7 @@ class QdesPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IClick)
     plugins.implements(plugins.IActions)
     plugins.implements(plugins.IClick)
+    plugins.implements(plugins.IPackageController, inherit=True)
 
     # IConfigurer
     def update_config(self, config_):
@@ -61,6 +62,8 @@ class QdesPlugin(plugins.SingletonPlugin):
             'qdes_organization_list': helpers.qdes_organization_list,
             'qdes_render_date_with_offset': helpers.qdes_render_date_with_offset,
             'qdes_activity_stream_detail': helpers.qdes_activity_stream_detail,
+            'qdes_add_activity_for_private_pkg': helpers.qdes_add_activity_for_private_pkg,
+            'get_publication_status_history': helpers.get_publication_status_history
         }
 
     # IClick
@@ -83,6 +86,13 @@ class QdesPlugin(plugins.SingletonPlugin):
     # IClick
     def get_commands(self):
         return get_commands()
+
+    # IPackageController
+    def after_create(self, context, pkg_dict):
+        return helpers.qdes_add_activity_for_private_pkg(context, pkg_dict, 'new')
+
+    def after_update(self, context, pkg_dict):
+        return helpers.qdes_add_activity_for_private_pkg(context, pkg_dict, 'changed')
 
 
 # Replace _notifications_for_activities function to replace the email subject.

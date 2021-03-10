@@ -19,6 +19,7 @@ from dateutil.relativedelta import relativedelta
 from flask import Response
 from sqlalchemy import cast, asc, DateTime
 from ckan.lib.dictization import model_dictize
+from pprint import pformat
 
 log = logging.getLogger(__name__)
 
@@ -197,3 +198,44 @@ def qdes_activity_stream_detail(activity_type):
     activity_type.reverse()
 
     return ' '.join(activity_type)
+
+
+def qdes_add_activity_for_private_pkg(context, pkg_dict, activity_type):
+    if pkg_dict.get('private'):
+        model = context['model']
+        session = context['session']
+        user = context['user']
+
+        pkg = model.Package.get(pkg_dict['id'])
+
+        user_obj = model.User.by_name(user)
+        if user_obj:
+            user_id = user_obj.id
+        else:
+            user_id = 'not logged in'
+
+        activity = pkg.activity_stream_item(activity_type, user_id)
+        session.add(activity)
+
+        return pkg_dict
+
+    return
+
+
+def get_publication_status_history(pkg_id):
+    activity_stream = model.activity.package_activity_list(pkg_id, None, None)
+
+    history = []
+    last_status = ''
+    for activity in activity_stream:
+        pkg = activity.data.get('package')
+        if pkg:
+            status = pkg.get('publication_status', '')
+            if not last_status == status:
+                last_status = status
+                history.append({
+                    'date': qdes_render_date_with_offset(pkg.get('metadata_modified')),
+                    'publication_status': status
+                })
+
+    return history
