@@ -43,23 +43,24 @@ def dashboard_review_datasets():
 
         data = clean_dict(dict_fns.unflatten(tuplize_dict(parse_params(request.form))))
 
-        if not type(data['dataset']) is list:
-            data['dataset'] = list([data['dataset']])
-            # No need to defer commit on single package patch
-            defer_commit = False
+        if 'dataset' in data:
+            if not type(data['dataset']) is list:
+                data['dataset'] = list([data['dataset']])
+                # No need to defer commit on single package patch
+                defer_commit = False
 
-        for package_id in data['dataset']:
-            try:
-                get_action('package_patch')({'defer_commit': defer_commit},
-                                            {'id': package_id, 'metadata_review_date': helpers.utcnow_as_string()})
-            except Exception as e:
-                log.error(str(e))
-                errors.append({'id': package_id, 'message': str(e)})
+            for package_id in data['dataset']:
+                try:
+                    get_action('package_patch')({'defer_commit': defer_commit},
+                                                {'id': package_id, 'metadata_review_date': helpers.utcnow_as_string()})
+                except Exception as e:
+                    log.error(str(e))
+                    errors.append({'id': package_id, 'message': str(e)})
 
-        if not errors:
-            h.flash_success('Dataset(s) marked as reviewed.')
-        else:
-            h.flash_error('Errors updating dataset review date: {}'.format(errors))
+            if not errors:
+                h.flash_success('Dataset(s) marked as reviewed.')
+            else:
+                h.flash_error('Errors updating dataset review date: {}'.format(errors))
 
         return h.redirect_to('/dashboard/review-datasets{}'.format('?org_id=' + org_id if org_id else ''))
 
