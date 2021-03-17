@@ -12,7 +12,7 @@ from ckan.model.package import Package
 from ckan.model.package_extra import PackageExtra
 from ckan.model.group import Group, Member
 from ckan.model.api_token import ApiToken
-from ckan.plugins.toolkit import config
+from ckan.plugins.toolkit import config, get_action, asbool
 from ckanext.qdes import constants
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -239,3 +239,41 @@ def get_publication_status_history(pkg_id):
                 })
 
     return history
+
+
+def get_banner_image():
+    filename = config.get('ckanext.qdes.banner_image', '') or ''
+    url = ''
+    if filename:
+        url = '/uploads/qdes-admin/' + filename
+
+    return {
+        'image_url': url
+    }
+
+
+def get_recently_created_datasets(limit=5):
+    q = model.Session.query(model.Activity)
+    q = q.filter(model.Activity.activity_type == 'new package')
+    q = q.order_by(model.Activity.timestamp.desc())
+    q = q.limit(limit)
+
+    return [dataset.data.get('package') for dataset in q.all()]
+
+
+def get_most_popular_datasets(limit=5):
+    q = model.Session.query(model.TrackingSummary)
+    q = q.filter(model.TrackingSummary.package_id != '~~not~found~~')
+    q = q.order_by(model.TrackingSummary.tracking_date.desc())
+    q = q.order_by(model.TrackingSummary.running_total.desc())
+    q = q.limit(limit)
+
+    return [get_action('package_show')({}, {"id": dataset.package_id}) for dataset in q.all()]
+
+
+def get_dataset_totals_by_type(dataset_type):
+    return get_action('package_search')({}, {"rows": 1, "fq": f"dataset_type:{dataset_type}"})['count']
+
+
+def qdes_tracking_enabled():
+    return asbool(config.get('ckan.qdes.tracking_enabled', 'false'))

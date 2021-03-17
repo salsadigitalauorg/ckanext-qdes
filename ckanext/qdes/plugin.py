@@ -5,7 +5,7 @@ import ckan.plugins.toolkit as toolkit
 import logging
 
 from ckan.common import _
-from ckanext.qdes import blueprint, helpers
+from ckanext.qdes import blueprint, helpers, validators, middleware
 from ckanext.qdes.cli import get_commands
 from ckanext.qdes.logic.action import get, create
 from pprint import pformat
@@ -21,6 +21,9 @@ class QdesPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IActions)
     plugins.implements(plugins.IClick)
     plugins.implements(plugins.IPackageController, inherit=True)
+    plugins.implements(plugins.IValidators)
+    plugins.implements(plugins.IMiddleware, inherit=True)
+
 
     # IConfigurer
     def update_config(self, config_):
@@ -39,12 +42,16 @@ class QdesPlugin(plugins.SingletonPlugin):
     def update_config_schema(self, schema):
         ignore_missing = toolkit.get_validator('ignore_missing')
         is_positive_integer = toolkit.get_validator('is_positive_integer')
+        validate_banner_image = toolkit.get_validator('validate_banner_image')
 
         schema.update({
             'ckanext.qdes_schema.dataset_review_period': [ignore_missing, is_positive_integer],
             'ckanext.qdes_schema.dataset_audit_period': [ignore_missing, is_positive_integer],
             'ckanext.qdes_schema.dataset_audit_period_last_run': [ignore_missing],
             'ckanext.qdes_schema.contact': [ignore_missing],
+            'ckanext.qdes.banner_image': [ignore_missing, validate_banner_image],
+            'clear_banner_image_upload': [ignore_missing],
+            'banner_image_upload': [ignore_missing]
         })
 
         return schema
@@ -63,7 +70,12 @@ class QdesPlugin(plugins.SingletonPlugin):
             'qdes_render_date_with_offset': helpers.qdes_render_date_with_offset,
             'qdes_activity_stream_detail': helpers.qdes_activity_stream_detail,
             'qdes_add_activity_for_private_pkg': helpers.qdes_add_activity_for_private_pkg,
-            'get_publication_status_history': helpers.get_publication_status_history
+            'get_publication_status_history': helpers.get_publication_status_history,
+            'get_banner_image': helpers.get_banner_image,
+            'get_recently_created_datasets' : helpers.get_recently_created_datasets,
+            'get_most_popular_datasets' : helpers.get_most_popular_datasets,
+            'get_dataset_totals_by_type': helpers.get_dataset_totals_by_type,
+            'qdes_tracking_enabled': helpers.qdes_tracking_enabled
         }
 
     # IClick
@@ -94,6 +106,17 @@ class QdesPlugin(plugins.SingletonPlugin):
     def after_update(self, context, pkg_dict):
         return helpers.qdes_add_activity_for_private_pkg(context, pkg_dict, 'changed')
 
+    # IValidators
+    def get_validators(self):
+        return {
+            'validate_banner_image': validators.validate_banner_image
+        }
+
+    # IMiddleware
+    def make_middleware(self, app, config):
+        if toolkit.asbool(config.get('ckan.qdes.tracking_enabled', 'false')):
+            return middleware.QdesTrackingMiddleware(app, config)
+        
 
 # Replace _notifications_for_activities function to replace the email subject.
 def update_email_subject(func):
