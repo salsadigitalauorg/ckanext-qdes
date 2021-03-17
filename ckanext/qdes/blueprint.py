@@ -61,6 +61,8 @@ def dashboard_review_datasets():
                 h.flash_success('Dataset(s) marked as reviewed.')
             else:
                 h.flash_error('Errors updating dataset review date: {}'.format(errors))
+        else:
+            h.flash_error('There are no datasets marked for review')
 
         return h.redirect_to('/dashboard/review-datasets{}'.format('?org_id=' + org_id if org_id else ''))
 
