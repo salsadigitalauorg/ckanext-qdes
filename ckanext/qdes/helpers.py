@@ -20,6 +20,7 @@ from flask import Response
 from sqlalchemy import cast, asc, DateTime
 from ckan.lib.dictization import model_dictize
 from pprint import pformat
+from urllib.parse import urlparse
 
 log = logging.getLogger(__name__)
 
@@ -242,10 +243,15 @@ def get_publication_status_history(pkg_id):
 
 
 def get_banner_image():
-    filename = config.get('ckanext.qdes.banner_image', '') or ''
+    banner_image = config.get('ckanext.qdes.banner_image', '') or ''
     url = ''
-    if filename:
-        url = '/uploads/qdes-admin/' + filename
+    if banner_image:
+        if urlparse(banner_image).netloc:
+            # Link url
+            url = banner_image
+        else:
+            # File upload
+            url = '/uploads/qdes-admin/' + banner_image
 
     return {
         'image_url': url
