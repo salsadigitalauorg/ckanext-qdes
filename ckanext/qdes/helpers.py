@@ -274,7 +274,16 @@ def get_most_popular_datasets(limit=5):
     q = q.order_by(model.TrackingSummary.running_total.desc())
     q = q.limit(limit)
 
-    return [get_action('package_show')({'ignore_auth': True}, {"id": dataset.package_id}) for dataset in q.all()]
+    popular_datasets = []
+
+    for dataset in q.all():
+        try:
+            pkg_dict = get_action('package_show')({'ignore_auth': True}, {"id": dataset.package_id})
+            popular_datasets.append(pkg_dict)
+        except Exception as e:
+            pass
+
+    return popular_datasets
 
 
 def get_dataset_totals_by_type(dataset_type):
