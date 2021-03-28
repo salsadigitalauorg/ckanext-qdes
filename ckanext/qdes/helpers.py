@@ -259,31 +259,26 @@ def get_banner_image():
 
 
 def get_recently_created_datasets(limit=5):
-    q = model.Session.query(model.Activity)
-    q = q.filter(model.Activity.activity_type == 'new package')
-    q = q.order_by(model.Activity.timestamp.desc())
+    q = model.Session.query(model.Package)
+    q = q.filter(model.Package.state == model.core.State.ACTIVE)
+    q = q.filter(model.Package.private == False)
+    q = q.order_by(model.Package.metadata_created.desc())
     q = q.limit(limit)
 
-    return [dataset.data.get('package') for dataset in q.all()]
+    return [dataset.as_dict() for dataset in q.all()]
 
 
 def get_most_popular_datasets(limit=5):
-    q = model.Session.query(model.TrackingSummary)
+    q = model.Session.query(model.Package)
+    q = q.join(model.TrackingSummary, model.TrackingSummary.package_id == model.Package.id)
     q = q.filter(model.TrackingSummary.package_id != '~~not~found~~')
+    q = q.filter(model.Package.state == model.core.State.ACTIVE)
+    q = q.filter(model.Package.private == False)
     q = q.order_by(model.TrackingSummary.tracking_date.desc())
     q = q.order_by(model.TrackingSummary.running_total.desc())
     q = q.limit(limit)
 
-    popular_datasets = []
-
-    for dataset in q.all():
-        try:
-            pkg_dict = get_action('package_show')({'ignore_auth': True}, {"id": dataset.package_id})
-            popular_datasets.append(pkg_dict)
-        except Exception as e:
-            pass
-
-    return popular_datasets
+    return [dataset.as_dict() for dataset in q.all()]
 
 
 def get_dataset_totals_by_type(dataset_type):
