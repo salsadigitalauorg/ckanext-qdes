@@ -34,3 +34,8 @@
 {% endblock %}
 
 {% block secondary_content %}{% endblock %}
+
+{%- block scripts %}
+  {{ super() }}
+  {% asset 'qdes/dashboard_reports' %}
+{% endblock %}
