@@ -37,7 +37,7 @@ class QdesAuthMiddleware(object):
             else:
                 # The only pages unauthorized users have access to are below
                 # service login, saml2login, acs (SAML Assertion Consumer Service), user unauthorised and logout pages
-                # But still allow unauthorized access to assets and API
+                # But still allow unauthorized access to assets
                 unauthorized_pages_allowed = toolkit.aslist(toolkit.config.get('ckanext.qdes_access.unauthorized_pages_allowed', ''))
                 if environ['PATH_INFO'] not in unauthorized_pages_allowed \
                         and not environ['PATH_INFO'].startswith('/base') \
