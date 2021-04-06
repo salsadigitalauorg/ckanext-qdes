@@ -139,7 +139,7 @@ def update_email_subject(func):
 
         notifications = func(activities, user_dict)
         if notifications:
-            notifications[0]['subject'] = _('Ecoscience.QLD Data Catalogue - Activity on Followed Content')
+            notifications[0]['subject'] = _('QESD catalogue – activity on followed content')
 
         return notifications
 
