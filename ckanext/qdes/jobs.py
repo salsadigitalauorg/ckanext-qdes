@@ -120,3 +120,13 @@ def generate_reports():
     })
 
     click.secho(u"Reports generated", fg=u"green")
+
+
+def mark_as_reviewed(datasets):
+    for package_id in datasets:
+        try:
+            site_user = get_action(u'get_site_user')({u'ignore_auth': True}, {})
+            context = {u'user': site_user[u'name'], 'defer_commit': False}
+            get_action('package_patch')(context, {'id': package_id, 'metadata_review_date': helpers.utcnow_as_string()})
+        except Exception as e:
+            log.error(str(e))

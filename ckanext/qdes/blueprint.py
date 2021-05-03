@@ -7,6 +7,7 @@ import os
 from ckan.common import config
 from ckanext.qdes import helpers
 from ckanext.qdes import constants
+from ckanext.qdes import jobs
 from flask import Blueprint
 from pprint import pformat
 
@@ -35,32 +36,15 @@ def dashboard_review_datasets():
     org_id = request.args.get('org_id', None)
 
     if request.method == 'POST':
-        errors = []
-
-        # Defer commit on bulk update to prevent Session closing pre-maturely
-        # and throwing exceptions when bulk updating
-        defer_commit = True
-
         data = clean_dict(dict_fns.unflatten(tuplize_dict(parse_params(request.form))))
 
         if 'dataset' in data:
             if not type(data['dataset']) is list:
                 data['dataset'] = list([data['dataset']])
-                # No need to defer commit on single package patch
-                defer_commit = False
 
-            for package_id in data['dataset']:
-                try:
-                    get_action('package_patch')({'defer_commit': defer_commit},
-                                                {'id': package_id, 'metadata_review_date': helpers.utcnow_as_string()})
-                except Exception as e:
-                    log.error(str(e))
-                    errors.append({'id': package_id, 'message': str(e)})
+            toolkit.enqueue_job(jobs.mark_as_reviewed, [data['dataset']])
 
-            if not errors:
-                h.flash_success('Dataset(s) marked as reviewed.')
-            else:
-                h.flash_error('Errors updating dataset review date: {}'.format(errors))
+            h.flash_success('This is a background process and can take several minutes. You can safely navigate away from this screen and check the status of the review process later.')
         else:
             h.flash_error('There are no datasets marked for review')
 
