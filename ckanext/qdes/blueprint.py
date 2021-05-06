@@ -42,9 +42,10 @@ def dashboard_review_datasets():
             if not type(data['dataset']) is list:
                 data['dataset'] = list([data['dataset']])
 
-            toolkit.enqueue_job(jobs.mark_as_reviewed, [data['dataset']])
+            toolkit.enqueue_job(jobs.mark_as_reviewed, args=[data['dataset']], rq_kwargs={u'timeout': 3600}, title="Review Datasets")
 
-            h.flash_success('This is a background process and can take several minutes. You can safely navigate away from this screen and check the status of the review process later.')
+            h.flash_success(
+                'This is a background process and can take several minutes. You can safely navigate away from this screen and check the status of the review process later.')
         else:
             h.flash_error('There are no datasets marked for review')
 

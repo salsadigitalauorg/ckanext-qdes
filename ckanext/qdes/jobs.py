@@ -1,4 +1,5 @@
 import ckan.plugins.toolkit as toolkit
+import ckan.model as model
 import click
 import logging
 import os
@@ -123,10 +124,22 @@ def generate_reports():
 
 
 def mark_as_reviewed(datasets):
-    for package_id in datasets:
-        try:
-            site_user = get_action(u'get_site_user')({u'ignore_auth': True}, {})
-            context = {u'user': site_user[u'name'], 'defer_commit': False}
-            get_action('package_patch')(context, {'id': package_id, 'metadata_review_date': helpers.utcnow_as_string()})
-        except Exception as e:
-            log.error(str(e))
+    try:
+        if datasets == None or len(datasets) == 0:
+            return
+        log.info(f'Starting to mark {len(datasets)} datasets as reviewed')
+        site_user = get_action(u'get_site_user')({u'ignore_auth': True}, {})
+        context = {u'user': site_user[u'name'], 'ignore_auth': True, 'defer_commit': True, 'return_id_only': True}
+        metadata_review_date = helpers.utcnow_as_string()
+        for package_id in datasets:
+            try:
+                log.info(f'Marking dataset {package_id} as reviewed')
+                get_action('package_patch')(context, {'id': package_id, 'metadata_review_date': metadata_review_date})
+            except Exception as e:
+                log.error(str(e))
+        # Because we set defer_commit = True we need to make sure we commit all the updates to the model.repo
+        log.info(f'Committing updates to database')
+        model.repo.commit()
+        log.info(f'Finished marking {len(datasets)} datasets as reviewed')
+    except Exception as e:
+        log.error(str(e))
