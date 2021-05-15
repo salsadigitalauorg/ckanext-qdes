@@ -45,7 +45,9 @@ def review_datasets(data_dict={}):
                 subject = render('emails/subject/review_datasets.txt')
                 body = render('emails/body/review_datasets.txt', {'datasets': datasets})
                 body_html = render('emails/body/review_datasets.html', {'datasets': datasets})
-                toolkit.enqueue_job(toolkit.mail_recipient, [recipient_name, recipient_email, subject, body, body_html])
+                # Improvements for job worker visibility when troubleshooting via logs
+                job_title = f'Review datasets: Sending email to {recipient_name}'
+                toolkit.enqueue_job(toolkit.mail_recipient, [recipient_name, recipient_email, subject, body, body_html], title=job_title)
 
 
 def generate_reports():
