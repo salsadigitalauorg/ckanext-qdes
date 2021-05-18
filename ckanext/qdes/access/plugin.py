@@ -30,7 +30,6 @@ class QdesAccessPlugin(plugins.SingletonPlugin):
             'group_edit_permissions': auth_update.group_edit_permissions,
             'member_create': auth_create.member_create,
             'member_delete': auth_delete.member_delete,
-            'api_token_list': auth_get.api_token_list,
             'user_reset': auth_get.user_reset,
             'request_reset': auth_get.request_reset
         }
