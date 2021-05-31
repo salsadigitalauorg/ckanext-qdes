@@ -24,3 +24,9 @@ def user_create(original_action, context, data_dict):
     return original_action(context, data_dict)
 
 
+@toolkit.chained_action
+def api_token_create(original_action, context, data_dict):
+    log.debug("Creating token from qdes ...")
+    api_token = toolkit.get_action('activit_create')()
+    return original_action(context, data_dict)
+
