@@ -10,6 +10,7 @@ from ckan.lib.helpers import render_datetime
 from ckan.model import Session
 from ckan.model.package import Package
 from ckan.model.package_extra import PackageExtra
+import ckan.plugins.toolkit as toolkit
 from ckan.model.group import Group, Member
 from ckan.model.api_token import ApiToken
 from ckan.plugins.toolkit import config, get_action, asbool
@@ -21,6 +22,10 @@ from sqlalchemy import cast, asc, DateTime
 from ckan.lib.dictization import model_dictize
 from pprint import pformat
 from urllib.parse import urlparse
+from sqlalchemy.sql import text
+
+
+from ckanext.vocabulary_services.secure.helpers import get_secure_vocabulary_record
 
 log = logging.getLogger(__name__)
 
@@ -83,6 +88,8 @@ def qdes_review_datasets(org_id=None):
     admin_org = g.userobj.get_groups('organization', 'admin')
     editor_org = g.userobj.get_groups('organization', 'editor')
     admin_editor_user = not g.userobj.sysadmin and (admin_org or editor_org)
+    contact_point_email = g.userobj.email
+    contact_point =  get_action('get_secure_vocabulary_search')({'user': g.user}, {'vocabulary_name': 'point-of-contact', 'query': contact_point_email, 'limit': 1})
     if g.userobj.sysadmin and org_id:
         # Sysadmin can see all of packages, except they filter the organization.
         query = query.filter(Package.owner_org == org_id)
@@ -95,6 +102,8 @@ def qdes_review_datasets(org_id=None):
             org_ids.append(organization.id)
         query = query.filter(Package.owner_org.in_(org_ids))
 
+    if contact_point:
+        query = query.filter(PackageExtra.key=='contact_point').filter(PackageExtra.value==contact_point[0].get('value'))
     packages = query.all()
 
     return packages
