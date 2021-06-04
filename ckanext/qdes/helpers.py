@@ -4,6 +4,7 @@ import time
 import zipfile
 import logging
 import ckan.model as model
+import ckan.views.user as user
 
 from ckan.common import g, _
 from ckan.lib.helpers import render_datetime
@@ -287,3 +288,62 @@ def get_dataset_totals_by_type(dataset_type):
 
 def qdes_tracking_enabled():
     return asbool(config.get('ckan.qdes.tracking_enabled', 'false'))
+
+
+def user_datasets(id):
+    context = {
+        u'model': model,
+        u'session': model.Session,
+        u'user': g.user,
+        u'auth_user_obj': g.userobj,
+        u'for_view': True
+    }
+    data_dict = {
+        u'id': id,
+        u'user_obj': g.userobj,
+        u'include_datasets': True,
+        u'include_num_followers': True
+    }
+
+    extra_vars = user._extra_template_variables(context, data_dict)
+
+    datasets = []
+
+    # Get dataset created by me.
+    if extra_vars['user_dict'].get('datasets'):
+        datasets = extra_vars['user_dict'].get('datasets')
+
+    # Get position id.
+    site_user = get_action(u'get_site_user')({u'ignore_auth': True}, {})
+    context = {u'user': site_user[u'name']}
+    secure_vocab = get_action('get_secure_vocabulary_search')(context, {'vocabulary_name': 'point-of-contact',
+                                                                        'query': extra_vars['user_dict'].get('email')})
+    pos_id = None
+    if secure_vocab and secure_vocab[0].get('value', None) is not None:
+        pos_id = secure_vocab[0].get('value')
+
+    # Get dataset I am dataset/metadata contact point.
+    if pos_id:
+        for search_field in ['contact_point', 'metadata_contact_point']:
+            data_dict = {
+                'fl': f"id, {search_field}",
+                'fq': f"{search_field}:{pos_id}"
+            }
+
+            query_result = get_action('package_search')(context, data_dict)
+
+            ids = []
+            if query_result.get('count') > 0:
+                for dataset in query_result.get('results'):
+                    ids.append(dataset.get('id'))
+
+                for dataset in datasets:
+                    if dataset.get('id') in ids:
+                        ids.remove(dataset.get('id'))
+
+                if len(ids) > 0:
+                    for id in ids:
+                        dataset = get_action('package_show')(context, {'id': id})
+                        datasets.append(dataset)
+
+    return datasets

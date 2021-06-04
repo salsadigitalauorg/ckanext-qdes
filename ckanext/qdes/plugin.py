@@ -75,7 +75,8 @@ class QdesPlugin(plugins.SingletonPlugin):
             'get_recently_created_datasets' : helpers.get_recently_created_datasets,
             'get_most_popular_datasets' : helpers.get_most_popular_datasets,
             'get_dataset_totals_by_type': helpers.get_dataset_totals_by_type,
-            'qdes_tracking_enabled': helpers.qdes_tracking_enabled
+            'qdes_tracking_enabled': helpers.qdes_tracking_enabled,
+            'user_datasets': helpers.user_datasets
         }
 
     # IClick
