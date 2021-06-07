@@ -1,4 +1,5 @@
 import ckan.plugins.toolkit as toolkit
+import ckan.lib.api_token as api_token
 import logging
 
 from ckanext.qdes import jobs
@@ -24,3 +25,35 @@ def user_create(original_action, context, data_dict):
     return original_action(context, data_dict)
 
 
+@toolkit.chained_action
+def api_token_create(original_action, context, data_dict):
+    result = original_action(context, data_dict)
+
+    # Exit early, token create error.
+    if not result.get('token', None):
+        return result
+
+    # Get api_token object.
+    model = context['model']
+    data = api_token.decode(result.get('token'))
+    if not data or u"jti" not in data:
+        return result
+
+    token_obj = model.ApiToken.get(data[u"jti"])
+
+    # Exit early, not able to get token object.
+    if not token_obj:
+        return result
+
+    # Create activity.
+    toolkit.get_action('activity_create')(context, {
+        'user_id': token_obj.owner.id,
+        'object_id': token_obj.owner.id,
+        'activity_type': 'new API token',
+        'data': {
+            'token': dict(token_obj.as_dict()),
+            'user': dict(token_obj.owner.as_dict())
+        }
+    })
+
+    return result
