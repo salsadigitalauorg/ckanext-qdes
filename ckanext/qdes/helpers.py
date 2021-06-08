@@ -94,6 +94,9 @@ def qdes_review_datasets(org_id=None):
         # Sysadmin can see all of packages, except they filter the organization.
         query = query.filter(Package.owner_org == org_id)
     elif admin_editor_user:
+        if not contact_point:
+            return []
+            
         organizations = set([])
         organizations.update(admin_org)
         organizations.update(editor_org)
@@ -101,8 +104,6 @@ def qdes_review_datasets(org_id=None):
         for organization in organizations:
             org_ids.append(organization.id)
         query = query.filter(Package.owner_org.in_(org_ids))
-
-    if contact_point:
         query = query.filter(PackageExtra.key=='contact_point').filter(PackageExtra.value==contact_point[0].get('value'))
     packages = query.all()
 
