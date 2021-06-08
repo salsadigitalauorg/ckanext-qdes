@@ -314,36 +314,40 @@ def user_datasets(id):
         datasets = extra_vars['user_dict'].get('datasets')
 
     # Get position id.
-    site_user = get_action(u'get_site_user')({u'ignore_auth': True}, {})
-    context = {u'user': site_user[u'name']}
-    secure_vocab = get_action('get_secure_vocabulary_search')(context, {'vocabulary_name': 'point-of-contact',
-                                                                        'query': extra_vars['user_dict'].get('email')})
-    pos_id = None
-    if secure_vocab and secure_vocab[0].get('value', None) is not None:
-        pos_id = secure_vocab[0].get('value')
+    if extra_vars['user_dict'].get('email'):
+        log.error("extra_vars['user_dict'].get('email')")
+        site_user = get_action(u'get_site_user')({u'ignore_auth': True}, {})
+        context = {u'user': site_user[u'name']}
+        secure_vocab = get_action('get_secure_vocabulary_search')(context, {'vocabulary_name': 'point-of-contact',
+                                                                            'query': extra_vars['user_dict'].get('email')})
 
-    # Get dataset I am dataset/metadata contact point.
-    if pos_id:
-        for search_field in ['contact_point', 'metadata_contact_point']:
-            data_dict = {
-                'fl': f"id, {search_field}",
-                'fq': f"{search_field}:{pos_id}"
-            }
+        pos_id = None
+        if secure_vocab and secure_vocab[0].get('value', None) is not None:
+            pos_id = secure_vocab[0].get('value')
 
-            query_result = get_action('package_search')(context, data_dict)
+        # Get dataset I am dataset/metadata contact point.
+        if pos_id:
+            for search_field in ['contact_point', 'metadata_contact_point']:
+                data_dict = {
+                    'fl': f"id, {search_field}",
+                    'fq': f"{search_field}:{pos_id}",
+                    'rows': 1000
+                }
 
-            ids = []
-            if query_result.get('count') > 0:
-                for dataset in query_result.get('results'):
-                    ids.append(dataset.get('id'))
+                query_result = get_action('package_search')(context, data_dict)
 
-                for dataset in datasets:
-                    if dataset.get('id') in ids:
-                        ids.remove(dataset.get('id'))
+                ids = []
+                if query_result.get('count') > 0:
+                    for dataset in query_result.get('results'):
+                        ids.append(dataset.get('id'))
 
-                if len(ids) > 0:
-                    for id in ids:
-                        dataset = get_action('package_show')(context, {'id': id})
-                        datasets.append(dataset)
+                    for dataset in datasets:
+                        if dataset.get('id') in ids:
+                            ids.remove(dataset.get('id'))
+
+                    if len(ids) > 0:
+                        for id in ids:
+                            dataset = get_action('package_show')(context, {'id': id})
+                            datasets.append(dataset)
 
     return datasets
