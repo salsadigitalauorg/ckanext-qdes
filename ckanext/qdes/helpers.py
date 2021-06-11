@@ -315,7 +315,6 @@ def user_datasets(id):
 
     # Get position id.
     if extra_vars['user_dict'].get('email'):
-        log.error("extra_vars['user_dict'].get('email')")
         site_user = get_action(u'get_site_user')({u'ignore_auth': True}, {})
         context = {u'user': site_user[u'name']}
         secure_vocab = get_action('get_secure_vocabulary_search')(context, {'vocabulary_name': 'point-of-contact',
