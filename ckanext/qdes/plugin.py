@@ -5,9 +5,10 @@ import ckan.plugins.toolkit as toolkit
 import logging
 
 from ckan.common import _
+from ckan.logic import validators as core_validator
 from ckanext.qdes import blueprint, helpers, validators, middleware
 from ckanext.qdes.cli import get_commands
-from ckanext.qdes.logic.action import get, create
+from ckanext.qdes.logic.action import get, create, delete
 from pprint import pformat
 
 log = logging.getLogger(__name__)
@@ -23,6 +24,7 @@ class QdesPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IPackageController, inherit=True)
     plugins.implements(plugins.IValidators)
     plugins.implements(plugins.IMiddleware, inherit=True)
+    plugins.implements(plugins.IConfigurable, inherit=True)
 
 
     # IConfigurer
@@ -55,6 +57,11 @@ class QdesPlugin(plugins.SingletonPlugin):
         })
 
         return schema
+
+    # IConfigurable
+    def configure(self, config):
+        core_validator.object_id_validators['new API token'] = core_validator.user_id_exists
+        core_validator.object_id_validators['revoked API token'] = core_validator.user_id_exists
 
     # IBlueprint
     def get_blueprint(self):
@@ -93,7 +100,10 @@ class QdesPlugin(plugins.SingletonPlugin):
             'qdes_datasets_not_reviewed': get.qdes_datasets_not_reviewed,
             'qdes_report_all': get.qdes_report_all,
             'create_review_datasets_job': create.review_datasets_job,
-            'user_create': create.user_create
+            'user_create': create.user_create,
+            'api_token_create': create.api_token_create,
+            'api_token_revoke': delete.api_token_revoke,
+            'api_token_activity_log': get.api_token_activity_log
         }
 
     # IClick
