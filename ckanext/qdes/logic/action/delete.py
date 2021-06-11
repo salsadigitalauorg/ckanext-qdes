@@ -13,6 +13,11 @@ def api_token_revoke(original_action, context, data_dict):
 
     # Exit early, not able to get token object.
     if token_obj:
+        # You must be a sysadmin to create new activities. So we need to ignore auth check
+        ignore_auth = context.get('ignore_auth', False)
+        if ignore_auth == False:
+            context['ignore_auth'] = True
+
         # Create activity.
         toolkit.get_action('activity_create')(context, {
             'user_id': token_obj.owner.id,
@@ -23,5 +28,9 @@ def api_token_revoke(original_action, context, data_dict):
                 'user': dict(token_obj.owner.as_dict())
             }
         })
+
+        # If original ignore_auth value was set to false lets set it back to false to go down the chain
+        if ignore_auth == False:
+            context['ignore_auth'] = False
 
     return original_action(context, data_dict)
