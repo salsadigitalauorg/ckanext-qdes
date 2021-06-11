@@ -11,6 +11,7 @@ from ckan.lib.helpers import render_datetime
 from ckan.model import Session
 from ckan.model.package import Package
 from ckan.model.package_extra import PackageExtra
+import ckan.plugins.toolkit as toolkit
 from ckan.model.group import Group, Member
 from ckan.model.api_token import ApiToken
 from ckan.plugins.toolkit import config, get_action, asbool
@@ -22,6 +23,10 @@ from sqlalchemy import cast, asc, DateTime
 from ckan.lib.dictization import model_dictize
 from pprint import pformat
 from urllib.parse import urlparse
+from sqlalchemy.sql import text
+
+
+from ckanext.vocabulary_services.secure.helpers import get_secure_vocabulary_record
 
 log = logging.getLogger(__name__)
 
@@ -72,22 +77,24 @@ def qdes_review_datasets(org_id=None):
     u"""
     Return a list of datasets that need to be reviewed.
     """
-    query = Session.query(Package).join(PackageExtra)
-
-    # Filter by metadata review date.
-    query = query.filter(PackageExtra.key == 'metadata_review_date') \
-        .filter(PackageExtra.value != '') \
-        .filter(Package.state == 'active') \
-        .order_by(asc(PackageExtra.value))
+    query = Session.query(Package) \
+        .join(PackageExtra) \
+        .filter(Package.state == 'active')
 
     # Filter by organisations.
     admin_org = g.userobj.get_groups('organization', 'admin')
     editor_org = g.userobj.get_groups('organization', 'editor')
     admin_editor_user = not g.userobj.sysadmin and (admin_org or editor_org)
+    contact_point_email = g.userobj.email
+    contact_point = get_action('get_secure_vocabulary_search')(
+        {'user': g.user}, {'vocabulary_name': 'point-of-contact', 'query': contact_point_email, 'limit': 1})
     if g.userobj.sysadmin and org_id:
         # Sysadmin can see all of packages, except they filter the organization.
         query = query.filter(Package.owner_org == org_id)
     elif admin_editor_user:
+        if not contact_point:
+            return []
+
         organizations = set([])
         organizations.update(admin_org)
         organizations.update(editor_org)
@@ -95,9 +102,11 @@ def qdes_review_datasets(org_id=None):
         for organization in organizations:
             org_ids.append(organization.id)
         query = query.filter(Package.owner_org.in_(org_ids))
+        query = query.filter(PackageExtra.key == 'contact_point').filter(PackageExtra.value == contact_point[0].get('value'))
 
     packages = query.all()
-
+    # Sort by metadata_review_date
+    packages.sort(key=lambda package: package.extras.get('metadata_review_date'))
     return packages
 
 
