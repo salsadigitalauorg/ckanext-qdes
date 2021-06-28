@@ -339,6 +339,7 @@ def user_datasets(id):
                 data_dict = {
                     'fl': f"id, {search_field}",
                     'fq': f"{search_field}:{pos_id}",
+                    'include_private': True,
                     'rows': 1000
                 }
 
