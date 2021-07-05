@@ -1,0 +1,6 @@
+dashboard_reports:
+  contents:
+    - dashboard_reports.js
+  extra:
+    preload:
+      - vendor/jquery

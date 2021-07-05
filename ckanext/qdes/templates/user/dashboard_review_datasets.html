@@ -1,0 +1,79 @@
+{% extends "user/dashboard.html" %}
+
+{% block primary_content_inner %}
+
+  {% if g.userobj.sysadmin %}
+    <form method="GET" class="form-inline">
+      <div class="form-group">
+        <label for="org_id">Organisation</label>
+        <select id="org_id" name="org_id" class="form-control">
+          <option value="">{{ _('Please select') }}</option>
+          {% for org in h.qdes_organization_list(g.userobj.id) %}
+            <option value="{{ org.id }}" {% if request.args.get('org_id') == org.id %} selected="selected" {% endif %} >{{ org.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <button class="btn btn-default" type="submit">
+          {{ _('Filter') }}
+        </button>
+      </div>
+    </form>
+
+    <br/>
+  {% endif %}
+
+  <h4>Datasets: {{ packages|length }}</h4>
+
+  <form method="POST" data-module="basic-form">
+    <table class="table table-bordered table-header table-hover table-bulk-edit table-edit-hover" data-module="table-selectable-rows">
+      <col width="8">
+      <col width="120">
+      <thead>
+        <tr>
+          <th></th>
+          <th class="table-actions">
+            <div class="btn-group">
+              <button name="bulk_action.public" value="public" class="btn btn-default" type="submit">
+                <i class="fa fa-check-square-o"></i>
+                {{ _('Mark as reviewed') }}
+              </button>
+            </div>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for package in packages %}
+          {% set truncate = truncate or 180 %}
+          {% set truncate_title = truncate_title or 80 %}
+          {% set title = package.title or package.name %}
+          {% if package.extras.metadata_review_date %}
+            {% set offset = h.render_datetime(package.extras.metadata_review_date, date_format='%z') %}
+            {% set review_date = h.render_datetime(package.extras.metadata_review_date, date_format='%d %b %Y, %H:%M:%S') ~ ' (' ~ offset[:3] ~ ":" ~ offset[-2:] ~ ')' %}
+            {% set due_date = h.qdes_review_due_date(package.extras.metadata_review_date) %}
+            {% set due_date_offset = h.render_datetime(due_date, date_format='%z') %}
+            {% set due_date_formatted = h.render_datetime(due_date, date_format='%d %b %Y, %H:%M:%S') ~ ' (' ~ offset[:3] ~ ":" ~ offset[-2:] ~ ')' %}
+          {% endif %}
+        <tr>
+            <td>
+              <input type="checkbox" name="dataset" value="{{ package.id }}">
+            </td>
+            <td class="context">
+              <a href="{% url_for package.type ~ '.edit', id=package.name %}" class="edit pull-right">
+                {{ _('Edit') }}
+              </a>
+              <h3 class="dataset-heading">
+                {{ h.link_to(h.truncate(title, truncate_title), h.url_for(package.type ~ '.read', id=package.name)) }}
+              </h3>
+              <p>Due date: {{ due_date_formatted }}</p>
+              <p>Last reviewed: {{ review_date }}</p>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </form>
+
+{% endblock %}
+
+{% block secondary_content %}{% endblock %}

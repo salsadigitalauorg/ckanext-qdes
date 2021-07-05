@@ -1,0 +1,12 @@
+<p>Queensland Environmental Science Data (QESD) catalogue performs a series of automated checks to maintain data quality:</p>
+
+<p>Datasets which have not changed or been updated in over 12 months are flagged for review to ensure that records are continually maintained and valid.</p>
+
+<p>Please review the following datasets and ensure information is up to date. Once complete please mark the datasets as reviewed.</p>
+
+</p>The affected datasets are:</p>
+<ul>
+    {% for dataset in datasets %}
+        <li><a href="{{dataset.get('url')}}">{{dataset.title}}</a></li>
+    {% endfor %}
+</ul>
