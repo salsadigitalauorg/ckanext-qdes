@@ -63,7 +63,6 @@ def send_email_notifications(ctx):
 @click.argument(u'username')
 @click.pass_context
 def deactivate_sysadmin(ctx, username):
-    breakpoint()
     user = model.User.get(username)
     if not user:
         error_shout(u"User not found!")
