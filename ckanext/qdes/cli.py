@@ -1,14 +1,11 @@
-import ckan.plugins.toolkit as toolkit
 from ckan.cli import error_shout
 
 import ckan.model as model
 import ckanext.qdes.jobs as jobs
-import os
 import click
 import logging
 
 from ckan.plugins.toolkit import get_action
-from pprint import pformat
 
 log = logging.getLogger(__name__)
 
@@ -59,6 +56,7 @@ def send_email_notifications(ctx):
     except Exception as e:
         log.error(e)
 
+
 @click.command("deactivate-sysadmin")
 @click.argument(u'username')
 @click.pass_context
@@ -72,6 +70,7 @@ def deactivate_sysadmin(ctx, username):
     user.state = 'deleted'
     model.repo.commit_and_remove()
     click.secho('User %r dectivated' % user.name, fg=u'green', bold=True)
+    
 
 def get_commands():
     return [generate_audit_reports, review_datasets, send_email_notifications, deactivate_sysadmin]
