@@ -1,5 +1,10 @@
 import ckan.plugins.toolkit as toolkit
 import ckanext.qdes.jobs as jobs
+import ckan.lib.jobs as ckan_jobs
+
+from time import sleep
+
+
 import os
 import click
 import logging
@@ -57,5 +62,12 @@ def send_email_notifications(ctx):
         log.error(e)
 
 
+@click.command("check-ckan-jobworker")
+def check_jobworker():
+    queue =  ckan_jobs.get_queue()
+    if queue:
+        return print("Jobworker OK")
+    return print("Jobworker down")
+
 def get_commands():
-    return [generate_audit_reports, review_datasets, send_email_notifications]
+    return [generate_audit_reports, review_datasets, send_email_notifications, check_jobworker]
