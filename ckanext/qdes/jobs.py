@@ -4,6 +4,7 @@ import click
 import logging
 import os
 import shutil
+import requests
 
 from ckan.common import config as cfg
 from ckanext.qdes import helpers, constants
@@ -144,4 +145,13 @@ def mark_as_reviewed(datasets):
         model.repo.commit()
         log.info(f'Finished marking {len(datasets)} datasets as reviewed')
     except Exception as e:
+        log.error(str(e))
+
+def ckan_worker_job_test():
+    try:
+        log.info(f'Sending notification to healthchecks for CKAN worker job test')
+        requests.get("https://hc-ping.com/60b47f7c-7f12-4936-a9be-e5b7193b2677", timeout=10)
+        log.info(f'Successfully sent notification to healthchecks for CKAN worker job test')
+    except requests.RequestException as e:
+        log.error(f'Failed to send ckan worker job test notification to healthchecks')
         log.error(str(e))

@@ -1,13 +1,11 @@
 import ckan.plugins.toolkit as toolkit
 import ckanext.qdes.jobs as jobs
-import os
 import click
 import logging
 
-from ckan.plugins.toolkit import get_action
-from pprint import pformat
 
 log = logging.getLogger(__name__)
+get_action = toolkit.get_action
 
 
 @click.command(u"generate-audit-reports")
@@ -56,6 +54,14 @@ def send_email_notifications(ctx):
     except Exception as e:
         log.error(e)
 
+@click.command(u"ckan-job-worker-test")
+def ckan_worker_job_test():
+    try:
+        toolkit.enqueue_job(jobs.ckan_jckan_worker_job_testob_test, title='CKAN job worker test')
+        click.secho(u"CKAN job worker test added to worker queue", fg=u"green")
+    except Exception as e:
+        log.error(e)
+
 
 def get_commands():
-    return [generate_audit_reports, review_datasets, send_email_notifications]
+    return [generate_audit_reports, review_datasets, send_email_notifications, ckan_worker_job_test]
