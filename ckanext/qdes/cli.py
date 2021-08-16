@@ -57,7 +57,7 @@ def send_email_notifications(ctx):
 @click.command(u"ckan-job-worker-test")
 def ckan_worker_job_test():
     try:
-        toolkit.enqueue_job(jobs.ckan_jckan_worker_job_testob_test, title='CKAN job worker test')
+        toolkit.enqueue_job(jobs.ckan_worker_job_test, title='CKAN job worker test')
         click.secho(u"CKAN job worker test added to worker queue", fg=u"green")
     except Exception as e:
         log.error(e)
