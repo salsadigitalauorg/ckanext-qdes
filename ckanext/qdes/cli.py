@@ -54,14 +54,14 @@ def send_email_notifications(ctx):
     except Exception as e:
         log.error(e)
 
-@click.command(u"ckan-job-worker-test")
-def ckan_worker_job_test():
+@click.command(u"ckan-job-worker-monitor")
+def ckan_worker_job_monitor():
     try:
-        toolkit.enqueue_job(jobs.ckan_worker_job_test, title='CKAN job worker test')
-        click.secho(u"CKAN job worker test added to worker queue", fg=u"green")
+        toolkit.enqueue_job(jobs.ckan_worker_job_monitor, title='CKAN job worker monitor')
+        click.secho(u"CKAN job worker monitor added to worker queue", fg=u"green")
     except Exception as e:
         log.error(e)
 
 
 def get_commands():
-    return [generate_audit_reports, review_datasets, send_email_notifications, ckan_worker_job_test]
+    return [generate_audit_reports, review_datasets, send_email_notifications, ckan_worker_job_monitor]
