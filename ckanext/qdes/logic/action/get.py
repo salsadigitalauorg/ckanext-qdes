@@ -264,7 +264,7 @@ def qdes_datasets_not_reviewed(context, config):
                 .get_point_of_contact(context, contact_point_pos) if contact_point_pos else {}
 
         rows.append({
-            'Dataset name': pkg_dict.get('title', pkg_dict.get('name', '')),
+            'Dataset ID': pkg_dict.get('id', ''),
             'Link to dataset (URI)': url_for('dataset.read', id=pkg_dict.get('name'), _external=True),
             'Dataset creator': extras.get('contact_creator', ''),
             'Point of contact - name': point_of_contacts.get(contact_point_pos).get('Name', ''),
