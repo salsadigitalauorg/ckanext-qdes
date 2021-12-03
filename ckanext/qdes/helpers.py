@@ -360,3 +360,12 @@ def user_datasets(id):
                             datasets.append(dataset)
 
     return datasets
+
+def get_follow_list(user_id):
+    follow_list = []
+    follow_list_dict = get_action('dataset_followee_list')({}, {'id': user_id})
+    if follow_list_dict:
+        for follow_dict in follow_list_dict:
+            follow_list.append(follow_dict)
+
+    return follow_list

@@ -154,6 +154,18 @@ def contact():
 
     return render(u'contact_page.html', extra_vars={"content": config.get('ckanext.qdes_schema.contact', '')})
 
+def follows():
+    # Only logged in user can access.
+    if not g.userobj:
+        abort(404, 'Not found')
+    
+   
+    extra_vars = {
+        'follow_list': helpers.get_follow_list(g.userobj.id),
+        'user_dict': get_action('user_show')({}, {'id': g.userobj.id}),
+    }
+    return render(u'user/dashboard_follows.html', extra_vars=extra_vars)
+
 
 qdes.add_url_rule(u'/dashboard/review-datasets', view_func=dashboard_review_datasets, methods=[u'GET', u'POST'])
 qdes.add_url_rule(u'/dashboard/reports', view_func=dashboard_reports, methods=[u'GET', u'POST'])
@@ -161,3 +173,4 @@ qdes.add_url_rule(u'/reports/<type>', view_func=reports, methods=[u'GET'])
 qdes.add_url_rule(u'/ckan-admin/api-tokens', view_func=api_tokens, methods=[u'GET'])
 qdes.add_url_rule(u'/ckan-admin/api-tokens/<jti>/revoke', view_func=api_token_revoke, methods=[u'POST'])
 qdes.add_url_rule(u'/contact', view_func=contact, methods=[u'GET'])
+qdes.add_url_rule(u'/follows', view_func=follows, methods=[u'GET'])
