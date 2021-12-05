@@ -2,28 +2,24 @@
 
 {% block primary_content_inner %}
 <div class="row">
-  <div class="col-xs-12 col-md-6">
+  <div class="col-md-12">
   <h2>  Datasets I am following </h2>
     <div class="row">
-      <div class="col-xs-12">
-            <ul class="list-group">
-                {% if not follow_list %}
-                    <p class="empty">
-                    {{ _('You haven\'t followed any datasets.') }}
-                    </p>
-                {% endif %}
-                {% for dataset in follow_list %}
-                <li class="list-group-item">
-                  {{ h.link_to(dataset.title, h.url_for('dataset.read', id=dataset.id)) }}
-                  <p> {{ h.truncate(dataset.notes, 80) }}</p>
-                    <div class="btn-group">
-                      {{ h.follow_button('dataset', dataset.id) }}
-                    </div>
-                </li>
-              {% endfor %}
-            </ul>
-          </div>
-   </div>
+            {% if not follow_list %}
+                <p class="empty">
+                {{ _('You haven\'t followed any datasets.') }}
+                </p>
+            {% endif %}
+            {% for dataset in follow_list %}
+            <li class="list-group-item">
+            {{ h.link_to(dataset.title, h.url_for('dataset.read', id=dataset.id)) }}
+            <p> {{ h.truncate(dataset.notes, 120) }}</p>
+                <div class="btn-group">
+                {{ h.follow_button('dataset', dataset.id) }}
+                </div>
+            </li>
+        {% endfor %}
+    </div>
 </div>
 {% endblock %}
 
