@@ -7,11 +7,11 @@ import ckan.model as model
 import ckan.views.user as user
 
 from ckan.common import g, _
-from ckan.lib.helpers import render_datetime
+from ckan.lib.helpers import render_datetime, _follow_objects
 from ckan.model import Session
 from ckan.model.package import Package
 from ckan.model.package_extra import PackageExtra
-import ckan.plugins.toolkit as toolkit
+import ckan.plugins.toolkit as tk
 from ckan.model.group import Group, Member
 from ckan.model.api_token import ApiToken
 from ckan.plugins.toolkit import config, get_action, asbool
@@ -361,11 +361,20 @@ def user_datasets(id):
 
     return datasets
 
-def get_follow_list(user_id):
-    follow_list = []
-    follow_list_dict = get_action('dataset_followee_list')({}, {'id': user_id})
-    if follow_list_dict:
-        for follow_dict in follow_list_dict:
-            follow_list.append(follow_dict)
 
-    return follow_list
+def get_followee_list(user_id):
+    return get_action('followee_list')({}, {'id': user_id})
+
+def qdes_follow_button(obj_type, obj_id):
+    obj_type = obj_type.lower()
+    assert obj_type in _follow_objects
+    # If the user is logged in show the follow/unfollow button
+    if tk.g.user:
+        context = {'model': model, 'session': model.Session, 'user': tk.g.user}
+        action = 'am_following_%s' % obj_type
+        following = tk.get_action(action)(context, {'id': obj_id})
+        return tk.render_snippet('snippets/qdes_follow_button.html',
+                       {'following': following,
+                       'obj_id': obj_id,
+                       'obj_type': obj_type })
+    return ''
