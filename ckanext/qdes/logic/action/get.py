@@ -331,35 +331,3 @@ def api_token_activity_log(context, data_dict):
                 })
 
     return result
-
-# def dataservice_followee_list(context, data_dict):
-#     '''Return the list of dataservices that are followed by the given user.
-
-#     :param id: the id or name of the user
-#     :type id: string
-
-#     :rtype: list of dictionaries
-
-#     '''
-#     check_access('dataset_followee_list', context, data_dict)
-
-#     if not context.get('skip_validation'):
-#         schema = context.get('schema') or (
-#             ckan.logic.schema.default_follow_user_schema())
-#         data_dict, errors = validate(data_dict, schema, context)
-#         if errors:
-#             raise toolkit.ValidationError(errors)
-
-#     # Get the list of Follower objects.
-#     model = context['model']
-#     user_id = _get_or_bust(data_dict, 'id')
-#     followees = model.UserFollowingDataset.followee_list(user_id)
-
-#     # Convert the list of Follower objects to a list of Package objects.
-#     datasets = [model.Package.get(followee.object_id)
-#                 for followee in followees]
-#     datasets = [dataset for dataset in datasets if dataset is not None]
-
-#     # Dictize the list of Package objects.
-#     return [model_dictize.package_dictize(dataset, context)
-#             for dataset in datasets]

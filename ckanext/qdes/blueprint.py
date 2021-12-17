@@ -190,7 +190,6 @@ def follows():
 
 
 def unfollowme(obj_id, obj_type):
-    breakpoint()
     if request.method == 'POST':
         h.url_for(obj_type + '.follow', id=obj_id)
         return h.redirect_to('qdes.follows')
