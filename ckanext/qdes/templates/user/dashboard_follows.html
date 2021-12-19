@@ -1,0 +1,127 @@
+{% extends "user/dashboard.html" %}
+
+{% block primary_content_inner %}
+  {% block dataset_follows %}
+    <div class="row">
+        <div class="col-md-12">
+        <h2>  Datasets I am following </h2>
+            <div class="row">
+                    {% if not dataset_followee_list %}
+                        <p class="empty">
+                        {{ _('You haven\'t followed any datasets.') }}
+                        </p>
+                    {% endif %}
+                    {% for dataset in dataset_followee_list %}
+                    <li class="list-group-item">
+                    <h3> {{ h.link_to(dataset.title, h.url_for('dataset.read', id=dataset.id)) }}</h3>
+                    <p> {{ h.truncate(dataset.notes, 120) }}</p>
+                        <div class="btn-group">
+                        {{ h.qdes_follow_button('dataset', dataset.id) }}
+                        </div>
+                    </li>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+   {% endblock %} 
+
+ {% block dataservice_follows %}
+    <div class="row">
+        <div class="col-md-12">
+        <h2>  Dataservices I am following </h2>
+            <div class="row">
+                    {% if not dataservice_followee_list %}
+                        <p class="empty">
+                        {{ _('You haven\'t followed any dataservices.') }}
+                        </p>
+                    {% endif %}
+                    {% for dataset in dataservice_followee_list %}
+                    <li class="list-group-item">
+                    <h3> {{ h.link_to(dataset.title, h.url_for('dataset.read', id=dataset.id)) }} </h3>
+                    <p> {{ h.truncate(dataset.notes, 120) }}</p>
+                        <div class="btn-group">
+                        {{ h.qdes_follow_button('dataset', dataset.id) }}
+                        </div>
+                    </li>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+   {% endblock %} 
+
+    {% block orgs_follows %}
+    <div class="row">
+        <div class="col-md-12">
+        <h2>  Organisations I am following </h2>
+            <div class="row">
+                    {% if not orgs_followee_list %}
+                        <p class="empty">
+                        {{ _('You haven\'t followed any organisations.') }}
+                        </p>
+                    {% endif %}
+                    {% for org in orgs_followee_list %}
+                    <li class="list-group-item">
+                    {{ h.link_to(org.title, h.url_for('organisation.read', id=org.id)) }}
+                    <p> {{ h.truncate(org.description, 120) }}</p>
+                        <div class="btn-group">
+                        {{ h.qdes_follow_button('group', org.id) }}
+                        </div>
+                    </li>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endblock %}
+
+    {% block category_follows %}
+    <div class="row">
+        <div class="col-md-12">
+        <h2>  Categories I am following </h2>
+            <div class="row">
+                    {% if not category_followee_list %}
+                        <p class="empty">
+                        {{ _('You haven\'t followed any categories.') }}
+                        </p>
+                    {% endif %}
+                    {% for category in category_followee_list %}
+                    <li class="list-group-item">
+                   <h3>{{ h.link_to(category.title, h.url_for('group.read', id=category.id)) }}</h3>
+                    <p> {{ h.truncate(category.description, 120) }}</p>
+                        <div class="btn-group">
+                        {{ h.qdes_follow_button('group', category.id) }}
+                        </div>
+                    </li>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endblock %}
+
+    {% block user_follows %}
+    <div class="row">
+        <div class="col-md-12">
+        <h2>  Users I am following </h2>
+            <div class="row">
+                    {% if not user_followee_list %}
+                        <p class="empty">
+                        {{ _('You haven\'t followed any users.') }}
+                        </p>
+                    {% endif %}
+                    {% for user in user_followee_list %}
+                    <li class="list-group-item">
+                    <h3>{{ h.link_to(user.display_name, h.url_for('user.read', id=user.id)) }}</h3>
+                    <p> {{ h.truncate(user.about, 120) }}</p>
+                        <div class="btn-group">
+                        {{ h.qdes_follow_button('user', user.id) }}
+                        </div>
+                    </li>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endblock %}
+
+{% endblock %}
+
+
+{% block secondary_content %}{% endblock %}
