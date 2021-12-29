@@ -154,7 +154,8 @@ def qdes_zip_csv_files(files):
     u"""
     Create a zip file to ./tmp directory and return the zip filename.
     """
-    filename = 'Audit-reports-' + str(datetime.utcnow().timestamp()) + '.zip'
+    today = datetime.utcnow().strftime("%Y%m%d.%H:%M:%S")
+    filename = str(today) +'AuditReport.zip'
     zipf = zipfile.ZipFile(constants.TMP_PATH + '/' + filename, 'w', zipfile.ZIP_DEFLATED)
 
     for file in files:
