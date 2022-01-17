@@ -28,7 +28,7 @@
  {% block dataservice_follows %}
     <div class="row">
         <div class="col-md-12">
-        <h2>  Dataservices I am following </h2>
+        <h2>  Data Services I am following </h2>
             <div class="row">
                     {% if not dataservice_followee_list %}
                         <p class="empty">
@@ -54,14 +54,15 @@
         <div class="col-md-12">
         <h2>  Organisations I am following </h2>
             <div class="row">
-                    {% if not orgs_followee_list %}
+                    {% if not organisation_followee_list %}
                         <p class="empty">
                         {{ _('You haven\'t followed any organisations.') }}
                         </p>
                     {% endif %}
-                    {% for org in orgs_followee_list %}
+                    
+                    {% for org in organisation_followee_list %}
                     <li class="list-group-item">
-                    {{ h.link_to(org.title, h.url_for('organisation.read', id=org.id)) }}
+                    {{ h.link_to(org.title, h.url_for('organization.read', id=org.id)) }}
                     <p> {{ h.truncate(org.description, 120) }}</p>
                         <div class="btn-group">
                         {{ h.qdes_follow_button('group', org.id) }}
