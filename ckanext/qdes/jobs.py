@@ -1,8 +1,10 @@
 import ckan.plugins.toolkit as toolkit
+import ckan.model as model
 import click
 import logging
 import os
 import shutil
+import requests
 
 from ckan.common import config as cfg
 from ckanext.qdes import helpers, constants
@@ -44,7 +46,9 @@ def review_datasets(data_dict={}):
                 subject = render('emails/subject/review_datasets.txt')
                 body = render('emails/body/review_datasets.txt', {'datasets': datasets})
                 body_html = render('emails/body/review_datasets.html', {'datasets': datasets})
-                toolkit.enqueue_job(toolkit.mail_recipient, [recipient_name, recipient_email, subject, body, body_html])
+                # Improvements for job worker visibility when troubleshooting via logs
+                job_title = f'Review datasets: Sending email to {recipient_name}'
+                toolkit.enqueue_job(toolkit.mail_recipient, [recipient_name, recipient_email, subject, body, body_html], title=job_title)
 
 
 def generate_reports():
@@ -120,3 +124,34 @@ def generate_reports():
     })
 
     click.secho(u"Reports generated", fg=u"green")
+
+
+def mark_as_reviewed(datasets):
+    try:
+        if datasets == None or len(datasets) == 0:
+            return
+        log.info(f'Starting to mark {len(datasets)} datasets as reviewed')
+        site_user = get_action(u'get_site_user')({u'ignore_auth': True}, {})
+        context = {u'user': site_user[u'name'], 'ignore_auth': True, 'defer_commit': True, 'return_id_only': True}
+        metadata_review_date = helpers.utcnow_as_string()
+        for package_id in datasets:
+            try:
+                log.info(f'Marking dataset {package_id} as reviewed')
+                get_action('package_patch')(context, {'id': package_id, 'metadata_review_date': metadata_review_date})
+            except Exception as e:
+                log.error(str(e))
+        # Because we set defer_commit = True we need to make sure we commit all the updates to the model.repo
+        log.info(f'Committing updates to database')
+        model.repo.commit()
+        log.info(f'Finished marking {len(datasets)} datasets as reviewed')
+    except Exception as e:
+        log.error(str(e))
+
+def ckan_worker_job_monitor():
+    try:
+        log.info(f'Sending notification to healthchecks for CKAN worker job monitor')
+        requests.get("https://hc-ping.com/60b47f7c-7f12-4936-a9be-e5b7193b2677", timeout=10)
+        log.info(f'Successfully sent notification to healthchecks for CKAN worker job monitor')
+    except requests.RequestException as e:
+        log.error(f'Failed to send ckan worker job monitor notification to healthchecks')
+        log.error(str(e))

@@ -19,6 +19,29 @@
         placeholder='Enter period as a number of months',
         value=data['ckanext.qdes_schema.dataset_audit_period'] if data['ckanext.qdes_schema.dataset_audit_period'] else 1,
         error=errors['ckanext.qdes_schema.dataset_audit_period']) }}
+
+    {{ form.markdown(
+        'ckanext.qdes_schema.contact',
+        id='field-ckanext.qdes_schema.contact',
+        label=_('Contact'),
+        value=data['ckanext.qdes_schema.contact'],
+        error=errors['ckanext.qdes_schema.contact']) }}
+
+    {% set field_url = 'ckanext.qdes.banner_image' %}
+    {% set is_upload = data[field_url] and not data[field_url].startswith('http') %}
+    {% set is_url = data[field_url] and data[field_url].startswith('http') %}
+    {{ form.image_upload(
+        data,
+        errors,
+        is_upload_enabled=h.uploads_enabled(),
+        is_url=is_url,
+        is_upload=is_upload,
+        upload_label = _('Banner image'),
+        url_label=_('Banner image'),
+        field_url=field_url,
+        field_upload='banner_image_upload',
+        field_clear='clear_banner_image_upload')}}
+
 {% endblock %}
 
 
@@ -31,5 +54,9 @@
     <p>
         <strong>Dataset audit period (months):</strong><br/>
         Enter period as a number of months
+    </p>
+    <p>
+        <strong>Contact:</strong><br/>
+        Text for contact page.
     </p>
 {% endblock %}

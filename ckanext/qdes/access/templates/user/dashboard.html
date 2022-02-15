@@ -2,14 +2,16 @@
 
 {% block page_header %}
   <header class="module-content page-header hug">
-    <div class="content_action">
-      {% link_for _('Profile settings'), named_route='user.edit', id=user.name, class_='btn btn-default', icon='cog' %}
-    </div>
+    {% if g.userobj is not none and g.userobj.sysadmin %}
+      <div class="content_action">
+        {% link_for _('Profile settings'), named_route='user.edit', id=user.name, class_='btn btn-default', icon='cog' %}
+      </div>
+    {% endif %}
     <ul class="nav nav-tabs">
       {{ h.build_nav_icon('dashboard.index', _('News feed'), icon='list') }}
       {{ h.build_nav_icon('dashboard.datasets', _('My Datasets'), icon='sitemap') }}
       {{ h.build_nav_icon('dashboard.organizations', _('My Organizations'), icon='building-o') }}
-      {{ h.build_nav_icon('qdes.follows', _('My Follows'), icon='plus-square-o') }}
+      {{ h.build_nav_icon('dashboard.groups', _('My Groups'), icon='users') }}
 
       {% if g.userobj is not none %}
         {% if g.userobj.sysadmin or g.userobj.get_groups('organization', 'admin') or g.userobj.get_groups('organization', 'editor') %}

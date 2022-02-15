@@ -1,0 +1,28 @@
+{%- set num = activities|length -%}
+{%- set site_title = "Queensland Environmental Science Data (QESD) catalogue" -%}
+
+{{ ungettext("You have {num} new activity on your {site_title} dashboard:", "You have {num} new activities on your {site_title} dashboard:", num).format(site_title=site_title, num=num) }}:
+
+{% for activity in activities -%}
+    {%- set data = activity['data'] if activity['data'] else None -%}
+    {%- set activity_type = activity['activity_type'] if activity['activity_type'] else None -%}
+    {%- if data -%}
+        {%- if data['package'] -%}
+            {%- set action = 'dataset_read' -%}
+            {%- set id = data['package']['name'] if data['package']['name'] else activity['object_id'] -%}
+        {%- elif data['group'] -%}
+            {%- set action = 'organization_read' if data['group']['is_organization'] else 'group_read' -%}
+            {%- set id = data['group']['name'] if data['group']['name'] else activity['object_id'] -%}
+        {%- endif -%}
+    {%- endif -%}
+    {% if action and id %}{{ h.url_for(action, id=id, _external=True) }}{% if activity_type %} ({{ h.qdes_activity_stream_detail(activity_type)|capitalize }}){% endif %}{% endif %}
+{% endfor %}
+{{ _('To view your dashboard, click on this link:') }}
+
+{{ g.site_url + '/dashboard' }}
+
+{{ _('You can turn off these email notifications by updating your profile on the {site_title}. To change your preferences, click on this link:').format(site_title=site_title) }}
+
+{{ g.site_url + '/user/edit' }}
+
+Do not reply to this email.
