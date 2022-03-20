@@ -147,14 +147,16 @@ def mark_as_reviewed(datasets):
     except Exception as e:
         log.error(str(e))
 
+
 def ckan_worker_job_monitor():
+    monitor_url = os.environ.get('MONITOR_QDES_JOBWORKER')
     try:
-        if os.environ.get('MONITOR_QDES_JOBWORKER', None):
+        if monitor_url:
             log.info(f'Sending notification for CKAN worker job monitor')
-            requests.get(os.environ.get('MONITOR_QDES_JOBWORKER'), timeout=10)
-            log.info(f'Successfully sent notification  for CKAN worker job monitor')
+            requests.get(monitor_url, timeout=10)
+            log.info(f'Successfully sent notification for CKAN worker job monitor')
         else:
             log.error(f'The env variable MONITOR_QDES_JOBWORKER is not set for CKAN worker job monitor')
     except requests.RequestException as e:
-        log.error(f'Failed to send ckan worker job monitor notification')
+        log.error(f'Failed to send ckan worker job monitor notification to {monitor_url}')
         log.error(str(e))
