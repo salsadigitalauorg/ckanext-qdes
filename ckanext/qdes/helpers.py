@@ -4,15 +4,17 @@ import time
 import zipfile
 import logging
 import ckan.model as model
+import ckan.views.user as user
 
 from ckan.common import g, _
-from ckan.lib.helpers import render_datetime
+from ckan.lib.helpers import render_datetime, _follow_objects
 from ckan.model import Session
 from ckan.model.package import Package
 from ckan.model.package_extra import PackageExtra
+import ckan.plugins.toolkit as tk
 from ckan.model.group import Group, Member
 from ckan.model.api_token import ApiToken
-from ckan.plugins.toolkit import config
+from ckan.plugins.toolkit import config, get_action, asbool
 from ckanext.qdes import constants
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -20,6 +22,11 @@ from flask import Response
 from sqlalchemy import cast, asc, DateTime
 from ckan.lib.dictization import model_dictize
 from pprint import pformat
+from urllib.parse import urlparse
+from sqlalchemy.sql import text
+
+
+from ckanext.vocabulary_services.secure.helpers import get_secure_vocabulary_record
 
 log = logging.getLogger(__name__)
 
@@ -70,22 +77,24 @@ def qdes_review_datasets(org_id=None):
     u"""
     Return a list of datasets that need to be reviewed.
     """
-    query = Session.query(Package).join(PackageExtra)
-
-    # Filter by metadata review date.
-    query = query.filter(PackageExtra.key == 'metadata_review_date') \
-        .filter(PackageExtra.value != '') \
-        .filter(Package.state == 'active') \
-        .order_by(asc(PackageExtra.value))
+    query = Session.query(Package) \
+        .join(PackageExtra) \
+        .filter(Package.state == 'active')
 
     # Filter by organisations.
     admin_org = g.userobj.get_groups('organization', 'admin')
     editor_org = g.userobj.get_groups('organization', 'editor')
     admin_editor_user = not g.userobj.sysadmin and (admin_org or editor_org)
+    contact_point_email = g.userobj.email
+    contact_point = get_action('get_secure_vocabulary_search')(
+        {'user': g.user}, {'vocabulary_name': 'point-of-contact', 'query': contact_point_email, 'limit': 1})
     if g.userobj.sysadmin and org_id:
         # Sysadmin can see all of packages, except they filter the organization.
         query = query.filter(Package.owner_org == org_id)
     elif admin_editor_user:
+        if not contact_point:
+            return []
+
         organizations = set([])
         organizations.update(admin_org)
         organizations.update(editor_org)
@@ -93,9 +102,11 @@ def qdes_review_datasets(org_id=None):
         for organization in organizations:
             org_ids.append(organization.id)
         query = query.filter(Package.owner_org.in_(org_ids))
+        query = query.filter(PackageExtra.key == 'contact_point').filter(PackageExtra.value == contact_point[0].get('value'))
 
     packages = query.all()
-
+    # Sort by metadata_review_date
+    packages.sort(key=lambda package: package.extras.get('metadata_review_date'))
     return packages
 
 
@@ -143,7 +154,8 @@ def qdes_zip_csv_files(files):
     u"""
     Create a zip file to ./tmp directory and return the zip filename.
     """
-    filename = 'backup-' + str(datetime.utcnow().timestamp()) + '.zip'
+    today = datetime.utcnow().strftime("%Y%m%d.%H:%M:%S")
+    filename = str(today) +'AuditReport.zip'
     zipf = zipfile.ZipFile(constants.TMP_PATH + '/' + filename, 'w', zipfile.ZIP_DEFLATED)
 
     for file in files:
@@ -239,3 +251,131 @@ def get_publication_status_history(pkg_id):
                 })
 
     return history
+
+
+def get_banner_image():
+    banner_image = config.get('ckanext.qdes.banner_image', '') or ''
+    url = ''
+    if banner_image:
+        if urlparse(banner_image).netloc:
+            # Link url
+            url = banner_image
+        else:
+            # File upload
+            url = '/uploads/qdes-admin/' + banner_image
+
+    return {
+        'image_url': url
+    }
+
+
+def get_recently_created_datasets(limit=5):
+    q = model.Session.query(model.Package)
+    q = q.filter(model.Package.state == model.core.State.ACTIVE)
+    q = q.filter(model.Package.private == False)
+    q = q.order_by(model.Package.metadata_created.desc())
+    q = q.limit(limit)
+
+    return [dataset.as_dict() for dataset in q.all()]
+
+
+def get_most_popular_datasets(limit=5):
+    q = model.Session.query(model.Package)
+    q = q.join(model.TrackingSummary, model.TrackingSummary.package_id == model.Package.id)
+    q = q.filter(model.TrackingSummary.package_id != '~~not~found~~')
+    q = q.filter(model.Package.state == model.core.State.ACTIVE)
+    q = q.filter(model.Package.private == False)
+    q = q.order_by(model.TrackingSummary.tracking_date.desc())
+    q = q.order_by(model.TrackingSummary.running_total.desc())
+    q = q.limit(limit)
+
+    return [dataset.as_dict() for dataset in q.all()]
+
+
+def get_dataset_totals_by_type(dataset_type):
+    return get_action('package_search')({}, {"rows": 1, "fq": f"dataset_type:{dataset_type}"})['count']
+
+
+def qdes_tracking_enabled():
+    return asbool(config.get('ckan.qdes.tracking_enabled', 'false'))
+
+
+def user_datasets(id):
+    context = {
+        u'model': model,
+        u'session': model.Session,
+        u'user': g.user,
+        u'auth_user_obj': g.userobj,
+        u'for_view': True
+    }
+    data_dict = {
+        u'id': id,
+        u'user_obj': g.userobj,
+        u'include_datasets': True,
+        u'include_num_followers': True
+    }
+
+    extra_vars = user._extra_template_variables(context, data_dict)
+
+    datasets = []
+
+    # Get dataset created by me.
+    if extra_vars['user_dict'].get('datasets'):
+        datasets = extra_vars['user_dict'].get('datasets')
+
+    # Get position id.
+    if extra_vars['user_dict'].get('email'):
+        site_user = get_action(u'get_site_user')({u'ignore_auth': True}, {})
+        context = {u'user': site_user[u'name']}
+        secure_vocab = get_action('get_secure_vocabulary_search')(context, {'vocabulary_name': 'point-of-contact',
+                                                                            'query': extra_vars['user_dict'].get('email')})
+
+        pos_id = None
+        if secure_vocab and secure_vocab[0].get('value', None) is not None:
+            pos_id = secure_vocab[0].get('value')
+
+        # Get dataset I am dataset/metadata contact point.
+        if pos_id:
+            for search_field in ['contact_point', 'metadata_contact_point']:
+                data_dict = {
+                    'fl': f"id, {search_field}",
+                    'fq': f"{search_field}:{pos_id}",
+                    'include_private': True,
+                    'rows': 1000
+                }
+
+                query_result = get_action('package_search')(context, data_dict)
+
+                ids = []
+                if query_result.get('count') > 0:
+                    for dataset in query_result.get('results'):
+                        ids.append(dataset.get('id'))
+
+                    for dataset in datasets:
+                        if dataset.get('id') in ids:
+                            ids.remove(dataset.get('id'))
+
+                    if len(ids) > 0:
+                        for id in ids:
+                            dataset = get_action('package_show')(context, {'id': id})
+                            datasets.append(dataset)
+
+    return datasets
+
+
+def get_followee_list(user_id):
+    return get_action('followee_list')({}, {'id': user_id})
+
+def qdes_follow_button(obj_type, obj_id):
+    obj_type = obj_type.lower()
+    assert obj_type in _follow_objects
+    # If the user is logged in show the follow/unfollow button
+    if tk.g.user:
+        context = {'model': model, 'session': model.Session, 'user': tk.g.user}
+        action = 'am_following_%s' % obj_type
+        following = tk.get_action(action)(context, {'id': obj_id})
+        return tk.render_snippet('snippets/qdes_follow_button.html',
+                       {'following': following,
+                       'obj_id': obj_id,
+                       'obj_type': obj_type })
+    return ''

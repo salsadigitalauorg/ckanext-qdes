@@ -5,9 +5,10 @@ import ckan.plugins.toolkit as toolkit
 import logging
 
 from ckan.common import _
-from ckanext.qdes import blueprint, helpers
+from ckan.logic import validators as core_validator
+from ckanext.qdes import blueprint, helpers, validators, middleware
 from ckanext.qdes.cli import get_commands
-from ckanext.qdes.logic.action import get, create
+from ckanext.qdes.logic.action import get, create, delete
 from pprint import pformat
 
 log = logging.getLogger(__name__)
@@ -21,6 +22,10 @@ class QdesPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IActions)
     plugins.implements(plugins.IClick)
     plugins.implements(plugins.IPackageController, inherit=True)
+    plugins.implements(plugins.IValidators)
+    plugins.implements(plugins.IMiddleware, inherit=True)
+    plugins.implements(plugins.IConfigurable, inherit=True)
+
 
     # IConfigurer
     def update_config(self, config_):
@@ -39,15 +44,24 @@ class QdesPlugin(plugins.SingletonPlugin):
     def update_config_schema(self, schema):
         ignore_missing = toolkit.get_validator('ignore_missing')
         is_positive_integer = toolkit.get_validator('is_positive_integer')
+        validate_banner_image = toolkit.get_validator('validate_banner_image')
 
         schema.update({
             'ckanext.qdes_schema.dataset_review_period': [ignore_missing, is_positive_integer],
             'ckanext.qdes_schema.dataset_audit_period': [ignore_missing, is_positive_integer],
             'ckanext.qdes_schema.dataset_audit_period_last_run': [ignore_missing],
             'ckanext.qdes_schema.contact': [ignore_missing],
+            'ckanext.qdes.banner_image': [ignore_missing, validate_banner_image],
+            'clear_banner_image_upload': [ignore_missing],
+            'banner_image_upload': [ignore_missing]
         })
 
         return schema
+
+    # IConfigurable
+    def configure(self, config):
+        core_validator.object_id_validators['new API token'] = core_validator.user_id_exists
+        core_validator.object_id_validators['revoked API token'] = core_validator.user_id_exists
 
     # IBlueprint
     def get_blueprint(self):
@@ -63,7 +77,14 @@ class QdesPlugin(plugins.SingletonPlugin):
             'qdes_render_date_with_offset': helpers.qdes_render_date_with_offset,
             'qdes_activity_stream_detail': helpers.qdes_activity_stream_detail,
             'qdes_add_activity_for_private_pkg': helpers.qdes_add_activity_for_private_pkg,
-            'get_publication_status_history': helpers.get_publication_status_history
+            'get_publication_status_history': helpers.get_publication_status_history,
+            'get_banner_image': helpers.get_banner_image,
+            'get_recently_created_datasets' : helpers.get_recently_created_datasets,
+            'get_most_popular_datasets' : helpers.get_most_popular_datasets,
+            'get_dataset_totals_by_type': helpers.get_dataset_totals_by_type,
+            'qdes_tracking_enabled': helpers.qdes_tracking_enabled,
+            'user_datasets': helpers.user_datasets,
+            'qdes_follow_button': helpers.qdes_follow_button,
         }
 
     # IClick
@@ -80,7 +101,10 @@ class QdesPlugin(plugins.SingletonPlugin):
             'qdes_datasets_not_reviewed': get.qdes_datasets_not_reviewed,
             'qdes_report_all': get.qdes_report_all,
             'create_review_datasets_job': create.review_datasets_job,
-            'user_create': create.user_create
+            'user_create': create.user_create,
+            'api_token_create': create.api_token_create,
+            'api_token_revoke': delete.api_token_revoke,
+            'api_token_activity_log': get.api_token_activity_log
         }
 
     # IClick
@@ -94,6 +118,17 @@ class QdesPlugin(plugins.SingletonPlugin):
     def after_update(self, context, pkg_dict):
         return helpers.qdes_add_activity_for_private_pkg(context, pkg_dict, 'changed')
 
+    # IValidators
+    def get_validators(self):
+        return {
+            'validate_banner_image': validators.validate_banner_image
+        }
+
+    # IMiddleware
+    def make_middleware(self, app, config):
+        if toolkit.asbool(config.get('ckan.qdes.tracking_enabled', 'false')):
+            return middleware.QdesTrackingMiddleware(app, config)
+        
 
 # Replace _notifications_for_activities function to replace the email subject.
 def update_email_subject(func):
@@ -116,7 +151,7 @@ def update_email_subject(func):
 
         notifications = func(activities, user_dict)
         if notifications:
-            notifications[0]['subject'] = _('Ecoscience.QLD Data Catalogue - Activity on Followed Content')
+            notifications[0]['subject'] = _('QESD catalogue – activity on followed content')
 
         return notifications
 

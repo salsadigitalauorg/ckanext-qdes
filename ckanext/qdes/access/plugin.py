@@ -32,7 +32,6 @@ class QdesAccessPlugin(plugins.SingletonPlugin):
             'group_edit_permissions': auth_update.group_edit_permissions,
             'member_create': auth_create.member_create,
             'member_delete': auth_delete.member_delete,
-            'api_token_list': auth_get.api_token_list,
             'user_reset': auth_get.user_reset,
             'request_reset': auth_get.request_reset
         }
@@ -63,8 +62,8 @@ class QdesAccessPlugin(plugins.SingletonPlugin):
         # If saml_user_group is configured, user cannot login with out a successful SAML group mapping to either organisation_mapping or read_only_saml_groups
         if saml_user_group:
             log.debug('Looking for SAML group with value: {}'.format(saml_user_group))
-            # groups = saml_attributes.get(saml_user_group, [])
-            groups = ['CG-FED-DDCAT-SDK-M', 'CG-FED-DDCAT']
+            groups = saml_attributes.get(saml_user_group, [])
+            # groups = ['CG-FED-DDCAT-SDK-M', 'CG-FED-DDCAT']
             log.debug('SAML groups found: {}'.format(groups))
             # This is set in the SAML2 extension before this interface is called
             userobj = toolkit.g.userobj

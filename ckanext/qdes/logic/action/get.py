@@ -1,4 +1,5 @@
 import logging
+import ckan.logic as logic
 import ckan.authz as authz
 import ckan.plugins.toolkit as toolkit
 import ckanext.qdes.logic.helpers.report_helpers as qdes_logic_helpers
@@ -10,7 +11,7 @@ from ckanext.qdes import helpers
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from pprint import pformat
-from sqlalchemy import func
+from sqlalchemy import func, or_
 
 check_access = toolkit.check_access
 get_action = toolkit.get_action
@@ -263,7 +264,7 @@ def qdes_datasets_not_reviewed(context, config):
                 .get_point_of_contact(context, contact_point_pos) if contact_point_pos else {}
 
         rows.append({
-            'Dataset name': pkg_dict.get('title', pkg_dict.get('name', '')),
+            'Dataset ID': pkg_dict.get('id', ''),
             'Link to dataset (URI)': url_for('dataset.read', id=pkg_dict.get('name'), _external=True),
             'Dataset creator': extras.get('contact_creator', ''),
             'Point of contact - name': point_of_contacts.get(contact_point_pos).get('Name', ''),
@@ -293,3 +294,40 @@ def qdes_report_all(context, config):
         return helpers.qdes_zip_csv_files(csv_files)
 
     return []
+
+
+@logic.side_effect_free
+def api_token_activity_log(context, data_dict):
+    # Check access for sysadmin user's only
+    check_access('sysadmin', context)
+
+    model = context['model']
+    q = model.Session.query(model.Activity)
+    q = q.filter(or_(model.Activity.activity_type == 'new API token', model.Activity.activity_type == 'revoked API token'))
+    q = q.order_by(model.Activity.timestamp.desc())
+    activities = q.all()
+
+    result = []
+    if activities:
+        for activity in activities:
+            data = activity.data
+
+            if data:
+                token = data.get('token', {})
+                user = data.get('user', {})
+
+                user_value = ''
+                if user.get('fullname'):
+                    user_value = user.get('fullname')
+                elif user.get('email'):
+                    user_value = user.get('email')
+
+                result.append({
+                    'token_id': activity.id,
+                    'name': token.get('name'),
+                    'action': 'create' if activity.activity_type == 'new API token' else 'revoke',
+                    'user': user_value,
+                    'timestamp': datetime.strptime(token.get('created_at'), '%Y-%m-%d %H:%M:%S.%f').strftime('%Y-%m-%dT%H:%M:%S.%f%z')
+                })
+
+    return result

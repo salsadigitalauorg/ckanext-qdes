@@ -1,7 +1,7 @@
 {%- set num = activities|length -%}
-{%- set title = "Queensland Government Open Data" -%}
+{%- set site_title = "Queensland Environmental Science Data (QESD) catalogue" -%}
 
-{{ ungettext("You have {num} new activity on your {site_title} dashboard", "You have {num} new activities on your {site_title} dashboard", num).format(site_title=title, num=num) }}:
+{{ ungettext("You have {num} new activity on your {site_title} dashboard:", "You have {num} new activities on your {site_title} dashboard:", num).format(site_title=site_title, num=num) }}:
 
 {% for activity in activities -%}
     {%- set data = activity['data'] if activity['data'] else None -%}
@@ -21,7 +21,7 @@
 
 {{ g.site_url + '/dashboard' }}
 
-{{ _('You can turn off these email notifications by updating your profile on the Queensland Open Data Portal. To change your preferences, click on this link:') }}
+{{ _('You can turn off these email notifications by updating your profile on the {site_title}. To change your preferences, click on this link:').format(site_title=site_title) }}
 
 {{ g.site_url + '/user/edit' }}
 

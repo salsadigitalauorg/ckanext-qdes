@@ -9,7 +9,7 @@
       {{ h.build_nav_icon('dashboard.index', _('News feed'), icon='list') }}
       {{ h.build_nav_icon('dashboard.datasets', _('My Datasets'), icon='sitemap') }}
       {{ h.build_nav_icon('dashboard.organizations', _('My Organizations'), icon='building-o') }}
-      {{ h.build_nav_icon('dashboard.groups', _('My Groups'), icon='users') }}
+      {{ h.build_nav_icon('qdes.follows', _('My Follows'), icon='plus-square-o') }}
 
       {% if g.userobj is not none %}
         {% if g.userobj.sysadmin or g.userobj.get_groups('organization', 'admin') or g.userobj.get_groups('organization', 'editor') %}
