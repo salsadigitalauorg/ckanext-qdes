@@ -8,12 +8,10 @@ import ckan.logic.auth as logic_auth
 
 from ckan.plugins.toolkit import (
     config,
-    asbool,
     aslist,
     get_action,
     get_converter,
-    get_validator,
-    ObjectNotFound
+    get_validator
 )
 
 log = logging.getLogger(__name__)
@@ -168,9 +166,7 @@ def delete_user(userobj):
     if userobj == None:
         return
 
-    context = {
-        u'user': get_action('get_site_user')({'ignore_auth': True}, {})['name']
-    }
+    context = get_context_with_site_user()
     log.debug('Deleting user {0}'.format(userobj.name))
     get_action('user_delete')(context, {"id": userobj.id})
     userobj.purge()
