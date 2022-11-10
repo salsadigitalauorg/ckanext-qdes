@@ -59,18 +59,18 @@ class QdesAccessPlugin(plugins.SingletonPlugin):
     def after_saml2_login(self, resp, saml_attributes):
         saml_user_group = toolkit.config.get(u'ckanext.qdes_access.saml_user_group', None)
         saml_sysadmin_group = toolkit.config.get(u'ckanext.qdes_access.saml_sysadmin_group', None)
-        # If saml_user_group is configured, user cannot login with out a successful SAML group mapping to either organisation_mapping or read_only_saml_groups
+        # If saml_user_group is configured, user cannot login with out a successful SAML group mapping to either organisation_mapping or saml_sysadmin_group/read_only_saml_groups
         if saml_user_group:
             log.debug('Looking for SAML group with value: {}'.format(saml_user_group))
             groups = saml_attributes.get(saml_user_group, [])
-            # groups = ['CG-FED-DDCAT-SDK-M', 'CG-FED-DDCAT']
             log.debug('SAML groups found: {}'.format(groups))
-            # This is set in the SAML2 extension before this interface is called
+            # If saml group does not exist in config for organisation_mapping or saml_sysadmin_group/read_only_saml_groups, delete the user
             userobj = toolkit.g.userobj
-            if helpers.saml_group_mapping_exist(groups):
-                helpers.update_user_sysadmin_status(userobj, saml_sysadmin_group, groups)
-                if not userobj.sysadmin:
-                    helpers.update_user_organasitions(userobj.name, groups)
+            helpers.update_user_sysadmin_status(userobj, saml_sysadmin_group, groups)
+            if userobj.sysadmin:
+                return resp
+            elif helpers.saml_group_mapping_exist(groups):
+                helpers.update_user_organasitions(userobj.name, groups)
             else:
                 log.warning('User {0} groups {1} does not exists'.format(userobj.fullname, groups))
                 # Delete user and override login response with a redirect response to the unauthorised page
