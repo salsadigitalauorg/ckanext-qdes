@@ -106,7 +106,7 @@ def qdes_empty_recommended_field_row(package, point_of_contact, missing_values, 
     """
     Return row for empty recommended field.
     """
-    resource_uri = url_for('resource.read',
+    resource_uri = url_for('dataset_resource.read',
                            resource_id=resource.get('id'),
                            id=package.get('id'),
                            package_type=package.get('type'),
@@ -154,7 +154,7 @@ def invalid_uri_csv_row(invalid_uri, point_of_contact, package, resource={}):
     # Setup any values we use multiple times below
     package_id = package.get('id', None)
 
-    resource_uri = url_for('resource.read',
+    resource_uri = url_for('dataset_resource.read',
                            resource_id=resource.get('id'),
                            id=package.get('id'),
                            package_type=package.get('type'),
