@@ -23,10 +23,6 @@ from sqlalchemy import cast, asc, DateTime
 from ckan.lib.dictization import model_dictize
 from pprint import pformat
 from urllib.parse import urlparse
-from sqlalchemy.sql import text
-
-
-from ckanext.vocabulary_services.secure.helpers import get_secure_vocabulary_record
 
 log = logging.getLogger(__name__)
 
