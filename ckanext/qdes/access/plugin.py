@@ -38,7 +38,8 @@ class QdesAccessPlugin(plugins.SingletonPlugin):
 
     # IMiddleware
     def make_middleware(self, app, config):
-        return middleware.QdesAuthMiddleware(app, config)
+        app.before_request(middleware.qdes_access_before_request)
+        return app
 
     # IConfigurer
     def update_config(self, config_):
