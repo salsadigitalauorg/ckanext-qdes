@@ -1,0 +1,25 @@
+Queensland Environmental Science Data (QESD) catalogue automatically checks for validation errors of datasets and their resources.
+
+The following dataset(s) have validation errors:
+
+{%- for validation_error in datasets -%}
+  {%- set dataset = validation_error.get('dataset') -%}
+  {%- set errors = validation_error.get('errors') -%}
+  {%- set schema = h.scheming_get_dataset_schema(dataset.type) -%}
+  {%- set dataset_type_action = dataset.type + '.edit' %}
+  - {{dataset.title}}: {{ h.url_for(dataset_type_action, id=dataset.name, _external=True) }}
+  {%- for key, error in errors.items() %}
+    {% if key == 'resources' -%}
+    - Resources:
+      {%- for resource in error %}
+      - {{ resource.resource_name }}: {{ h.url_for('resource.edit', package_type=dataset.type, id=dataset.name, resource_id=resource.resource_id, _external=True) }}
+        {%- for key, error in resource.errors.items() %}
+        - {{ h.qdes_get_field_label(key, schema, 'resource_fields') }}: {{ error|join(', ')|safe }}
+        {%- endfor %}
+      {%- endfor %}
+    {%- else -%}
+    - {{ h.qdes_get_field_label(key, schema) }}: {{ error|join(', ')|safe }}
+    {%- endif -%}
+  {% endfor %}
+{% endfor %}
+Please review the dataset metadata.

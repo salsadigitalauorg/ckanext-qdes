@@ -10,9 +10,14 @@ from ckan.common import config as cfg
 from ckanext.qdes import helpers, constants
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+from ckanext.scheming.plugins import SchemingDatasetsPlugin
+from ckan.logic.schema import default_update_package_schema
 
 get_action = toolkit.get_action
 render = toolkit.render
+config = toolkit.config
+enqueue_job = toolkit.enqueue_job
+mail_recipient = toolkit.mail_recipient
 log = logging.getLogger(__name__)
 
 
@@ -48,7 +53,7 @@ def review_datasets(data_dict={}):
                 body_html = render('emails/body/review_datasets.html', {'datasets': datasets})
                 # Improvements for job worker visibility when troubleshooting via logs
                 job_title = f'Review datasets: Sending email to {recipient_name}'
-                toolkit.enqueue_job(toolkit.mail_recipient, [recipient_name, recipient_email, subject, body, body_html], title=job_title)
+                enqueue_job(mail_recipient, [recipient_name, recipient_email, subject, body, body_html], title=job_title)
 
 
 def generate_reports():
@@ -160,3 +165,96 @@ def ckan_worker_job_monitor():
     except requests.RequestException as e:
         log.error(f'Failed to send ckan worker job monitor notification to {monitor_url}')
         log.error(str(e))
+
+def validate_datasets():
+    # Get site default user
+    user = get_action('get_site_user')({'ignore_auth': True})
+    context = {
+        'user': user.get('name'),
+        'auth_user_obj': user,
+        'ignore_auth': True,
+    }
+    p = SchemingDatasetsPlugin.instance
+    # Get all public datasets
+    dataset_list = get_action('package_list')(context, {})
+    validation_errors = []
+    exclude_from_validation = toolkit.aslist(config.get('ckanext.qdes.validation_error_exclude_metadata'))
+    # Loop through all datasets and validate each one
+    for dataset in dataset_list:
+        try:
+            data_dict = get_action('package_show')(context, {"id": dataset})
+            schema = default_update_package_schema()
+            pkg_data, pkg_errors = p.validate(context, data_dict, schema, 'package_update')
+            if pkg_errors:
+                log.error("Validation errors for dataset: {}".format(dataset))
+                # Exclude certain fields from dataset validation errors
+                pkg_errors = {key: error for key, error in pkg_errors.items() if key not in exclude_from_validation}
+                if pkg_errors.get('resources'):
+                    pkg_errors.pop('resources')
+                    # Validate resource, the above code will validate resource
+                    # but it has no indication which resource is throwing an error,
+                    # so we will re-run the validation for each resource.
+                    resources = data_dict.get('resources', [])
+                    if resources:
+                        data_dict.pop('resources')
+                        for res in resources:
+                            data_dict['resources'] = [res]
+                            pkg_data, resource_errors = p.validate(context, data_dict, schema, 'package_update')
+                            if resource_errors.get('resources') and len(resource_errors.get('resources')) == 1:
+                                # Exclude certain fields from resource validation errors
+                                resource_errors = {key: error for key, error in resource_errors.get('resources')[0].items() if key not in exclude_from_validation}
+                                if resource_errors and len(resource_errors) > 0 :
+                                    pkg_errors['resources'] = [{
+                                        'resource_id': res.get('id'),
+                                        'resource_name': res.get('name'),
+                                        'errors': resource_errors
+                                    }]
+                if len(pkg_errors) > 0:
+                    validation_errors.append({'dataset': data_dict, 'errors': pkg_errors})
+        except Exception as e:
+            log.error(f"Error validating dataset: {dataset}")
+            log.error(f"Error: {e}")
+    
+    # Aggregate dataset validation errors by contact point
+    contact_points = {}
+    for validation_error in validation_errors:
+        contact_point = validation_error.get('dataset').get('contact_point')
+        datasets = contact_points.get(contact_point, [])
+        # Only add dataset if it does not already exist in datasets list
+        datasets.append(validation_error) if validation_error not in datasets else datasets
+        contact_points[contact_point] = datasets
+    
+    # Send email to contact points if there are validation errors 
+    for contact_point in contact_points:
+        try:
+            datasets = contact_points[contact_point]
+            # Only email contact point if there are datasets
+            if len(datasets) > 0:
+                contact_point_data = get_action('get_secure_vocabulary_record')(context, {'vocabulary_name': 'point-of-contact', 'query': contact_point})
+                if contact_point_data:
+                    recipient_name = contact_point_data.get('Name', '')
+                    recipient_email = contact_point_data.get('Email', '')
+                    subject = render('emails/subject/validate_datasets.txt')
+                    body = render('emails/body/validate_datasets.txt', {'datasets': datasets})
+                    body_html = render('emails/body/validate_datasets.html', {'datasets': datasets})
+                    mail_recipient(recipient_name, recipient_email, subject, body, body_html)
+                else:
+                    # No contact point found for email notification
+                    log.error(f'No contact point found for {contact_point}')
+        except Exception as e:
+            log.error(f"Error sending email to {contact_point}")
+
+    # Send email to admin if there are validation errors
+    if validation_errors:
+        recipient_name = config.get('ckanext.qdes.validation_error_recipient_name')
+        recipient_email = config.get('ckanext.qdes.validation_error_recipient_email')
+        try:
+            if recipient_email:
+                subject = render('emails/subject/validate_datasets.txt')
+                body = render('emails/body/validate_datasets.txt', {'datasets': validation_errors})
+                body_html = render('emails/body/validate_datasets.html', {'datasets': validation_errors})
+                mail_recipient(recipient_name, recipient_email, subject, body, body_html)
+            else:
+                log.error(f'validation_error_recipient_email is not set')
+        except Exception as e:
+            log.error(f"Error sending email to {recipient_name}:{recipient_email}")
