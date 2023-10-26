@@ -61,7 +61,18 @@ def ckan_worker_job_monitor():
         click.secho(u"CKAN job worker monitor added to worker queue", fg=u"green")
     except Exception as e:
         log.error(e)
-
+        
+@click.command(u"validate-datasets")
+@click.pass_context
+def validate_datasets(ctx):
+    click.secho(f"Starting validating datasets", fg=u"green")
+    try:
+        flask_app = ctx.meta['flask_app']
+        with flask_app.test_request_context():
+            jobs.validate_datasets()
+    except Exception as e:
+        log.error(e)
+    click.secho(f"Finished validating datasets", fg=u"green")
 
 def get_commands():
-    return [generate_audit_reports, review_datasets, send_email_notifications, ckan_worker_job_monitor]
+    return [generate_audit_reports, review_datasets, send_email_notifications, ckan_worker_job_monitor, validate_datasets]

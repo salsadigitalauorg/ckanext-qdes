@@ -1,0 +1,44 @@
+<p>Queensland Environmental Science Data (QESD) catalogue automatically checks for validation errors of datasets and their resources.</p>
+<p>The following dataset(s) have validation errors:</p>
+<ul>
+  {% for validation_error in datasets %}
+  {%- set dataset = validation_error.get('dataset') -%}
+  {%- set errors = validation_error.get('errors') -%}
+  {%- set schema = h.scheming_get_dataset_schema(dataset.type) -%}
+  <li><a href="{{ h.url_for(dataset.type + '.read', id=dataset.name, _external=True) }}">{{dataset.title}}</a></li>
+  <ul>
+    {% for key, error in errors.items() %}
+      {% if key == 'resources' %}
+        <li>Resources:
+        <ul>
+        {% for resource in error %}
+          <li>
+            <a href="{{ h.url_for(dataset.type + '_resource.read', package_type=dataset.type, id=dataset.name, resource_id=resource.resource_id, _external=True) }}">
+              {{resource.resource_name}}
+            </a>
+          </li>
+          {% for key, error in resource.errors.items() %}
+            <ul>
+              <li>
+                <a target="_blank" href="{{ h.url_for('resource.edit', package_type=dataset.type, id=dataset.name, resource_id=resource.resource_id, _external=True) }}#field-{{key}}">
+                  {{ h.qdes_get_field_label(key, schema, 'resource_fields') }}
+                </a> : {{ error|join(', ') }}
+              </li>
+            </ul>
+          {% endfor %}
+        {% endfor %}
+        </ul>  
+        </li>
+      {% else %}
+      <li>
+        <a target="_blank" href="{{ h.url_for(dataset.type + '.edit', id=dataset.name, _external=True) }}#field-{{key}}">
+          {{ h.qdes_get_field_label(key, schema) }}
+        </a> : {{ error|join(', ') }}
+      </li>
+      {% endif %}
+    {% endfor %}
+  </ul>
+  <br>
+  {% endfor %}
+</ul>
+Please review the dataset metadata.
