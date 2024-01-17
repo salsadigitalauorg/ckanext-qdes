@@ -15,13 +15,18 @@ from sqlalchemy import func, or_
 
 check_access = toolkit.check_access
 get_action = toolkit.get_action
+NotAuthorized = toolkit.NotAuthorized
 qdes_render_date_with_offset = helpers.qdes_render_date_with_offset
 log = logging.getLogger(__name__)
 
 
-def review_datasets(context, data_dict):
+def check_user_access_for_reports(context):
+    # Check if the user is a system administrator or has permission to create a dataset in any organisation
     if not authz.is_sysadmin(context.get('user')) and not authz.has_user_permission_for_some_org(context.get('user'), 'create_dataset'):
-        return {'success': False, 'msg': toolkit._('Not authorized')}
+        raise NotAuthorized()
+
+def review_datasets(context, data_dict):
+    check_user_access_for_reports(context)
 
     try:
         datasets = qdes_logic_helpers.qdes_get_list_of_datasets_not_reviewed()
@@ -38,8 +43,7 @@ def qdes_datasets_not_updated(context, config={}):
     List of all datasets that have been created
     but have not been updated in 12 months.
     """
-    # Check access for sysadmin user's only
-    check_access('config_option_update', context, None)
+    check_user_access_for_reports(context)
 
     # Get org_id config.
     org_id = config.get('org_id', None)
@@ -82,8 +86,7 @@ def qdes_datasets_with_empty_recommended_fields(context, config={}):
     u"""
     List of all datasets that have no values against recommended metadata fields.
     """
-    # Check access for sysadmin user's only
-    check_access('config_option_update', context, None)
+    check_user_access_for_reports(context)
 
     # Get org_id config.
     org_id = config.get('org_id', None)
@@ -156,8 +159,7 @@ def qdes_datasets_with_invalid_urls(context, config={}):
     u"""
     List of all datasets with broken links to resources.
     """
-    # Check access for sysadmin user's only
-    check_access('config_option_update', context, None)
+    check_user_access_for_reports(context)
 
     org_id = config.get('org_id', None)
 
@@ -236,8 +238,7 @@ def qdes_datasets_not_reviewed(context, config):
     u"""
     List of all datasets with over 12 months review date.
     """
-    # Check access for sysadmin user's only
-    check_access('config_option_update', context, None)
+    check_user_access_for_reports(context)
 
     # Get org_id config.
     org_id = config.get('org_id', None)
