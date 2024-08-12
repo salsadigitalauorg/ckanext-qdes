@@ -1,15 +1,17 @@
 import ckan.model as model
-import ckan.lib.email_notifications as email_notifications
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 import logging
 
 from ckan.common import _
 from ckan.logic import validators as core_validator
+from ckanext.activity.logic import validators as activity_validators
 from ckanext.qdes import blueprint, helpers, validators, middleware
 from ckanext.qdes.cli import get_commands
 from ckanext.qdes.logic.action import get, create, delete
-from pprint import pformat
+
+import ckanext.activity.email_notifications as email_notifications
+
 
 log = logging.getLogger(__name__)
 
@@ -60,8 +62,8 @@ class QdesPlugin(plugins.SingletonPlugin):
 
     # IConfigurable
     def configure(self, config):
-        core_validator.object_id_validators['new API token'] = core_validator.user_id_exists
-        core_validator.object_id_validators['revoked API token'] = core_validator.user_id_exists
+        activity_validators.object_id_validators['new API token'] = core_validator.user_id_exists
+        activity_validators.object_id_validators['revoked API token'] = core_validator.user_id_exists
 
     # IBlueprint
     def get_blueprint(self):
@@ -128,7 +130,7 @@ class QdesPlugin(plugins.SingletonPlugin):
     def make_middleware(self, app, config):
         if toolkit.asbool(config.get('ckan.qdes.tracking_enabled', 'false')):
             return middleware.QdesTrackingMiddleware(app, config)
-        
+
 
 # Replace _notifications_for_activities function to replace the email subject.
 def update_email_subject(func):

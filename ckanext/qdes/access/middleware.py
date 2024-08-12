@@ -12,8 +12,7 @@ def qdes_access_before_request():
         toolkit.request.environ['__no_cache__'] = True
     else:
         log.debug(f'Allowed cached endpoint {toolkit.request.endpoint}')
-    
-    if not authz.auth_is_loggedin_user() and toolkit.request.endpoint not in toolkit.aslist(toolkit.config.get('ckanext.qdes_access.unauthenticated_allowed_endpoints')):
+    if toolkit.current_user.is_anonymous and toolkit.request.endpoint not in toolkit.aslist(toolkit.config.get('ckanext.qdes_access.unauthenticated_allowed_endpoints')):
         if toolkit.request.endpoint.startswith('api'):
             log.warning(f'Unauthenticated access to {toolkit.request.endpoint}. Returning 403 Authorization Error.')
             return_dict = {}
