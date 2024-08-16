@@ -7,17 +7,20 @@ log = logging.getLogger(__name__)
 
 
 def qdes_access_before_request():
+    # We could remove it after CKAN 2.10.5 release
+    if not toolkit.request.endpoint:
+        return
     if toolkit.request.endpoint not in toolkit.aslist(toolkit.config.get('ckanext.qdes_access.allowed_cached_endpoints')):
         log.debug(f'Setting __no_cache__ for endpoint {toolkit.request.endpoint}')
         toolkit.request.environ['__no_cache__'] = True
     else:
         log.debug(f'Allowed cached endpoint {toolkit.request.endpoint}')
     if toolkit.current_user.is_anonymous and toolkit.request.endpoint not in toolkit.aslist(toolkit.config.get('ckanext.qdes_access.unauthenticated_allowed_endpoints')):
-        if toolkit.request.endpoint.startswith('api'):
+        if toolkit.request.endpoint and toolkit.request.endpoint.startswith('api'):
             log.warning(f'Unauthenticated access to {toolkit.request.endpoint}. Returning 403 Authorization Error.')
             return_dict = {}
             return_dict['error'] = {'__type': 'Authorization Error',
-                                     'message': toolkit._('Access denied')}
+                                        'message': toolkit._('Access denied')}
             return_dict['success'] = False
             toolkit.request.environ['__no_cache__'] = True
             return api._finish(403, return_dict, content_type='json')

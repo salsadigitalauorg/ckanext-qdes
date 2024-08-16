@@ -114,10 +114,10 @@ class QdesPlugin(plugins.SingletonPlugin):
         return get_commands()
 
     # IPackageController
-    def after_create(self, context, pkg_dict):
+    def after_dataset_create(self, context, pkg_dict):
         return helpers.qdes_add_activity_for_private_pkg(context, pkg_dict, 'new')
 
-    def after_update(self, context, pkg_dict):
+    def after_dataset_update(self, context, pkg_dict):
         return helpers.qdes_add_activity_for_private_pkg(context, pkg_dict, 'changed')
 
     # IValidators
