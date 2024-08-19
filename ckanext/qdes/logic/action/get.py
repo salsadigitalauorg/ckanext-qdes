@@ -9,8 +9,6 @@ from ckan.lib.helpers import url_for
 from ckan.model import Session
 from ckanext.qdes import helpers
 from datetime import datetime
-from dateutil.relativedelta import relativedelta
-from pprint import pformat
 from sqlalchemy import func, or_
 
 check_access = toolkit.check_access

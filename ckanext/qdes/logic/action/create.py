@@ -3,7 +3,6 @@ import ckan.lib.api_token as api_token
 import logging
 
 from ckanext.qdes import jobs
-from pprint import pformat
 
 check_access = toolkit.check_access
 log = logging.getLogger(__name__)
