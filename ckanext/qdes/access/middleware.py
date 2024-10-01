@@ -7,9 +7,6 @@ log = logging.getLogger(__name__)
 
 
 def qdes_access_before_request():
-    # We could remove it after CKAN 2.10.5 release
-    # if not toolkit.request.endpoint:
-    #     return
     if toolkit.request.endpoint not in toolkit.aslist(toolkit.config.get('ckanext.qdes_access.allowed_cached_endpoints')):
         log.debug(f'Setting __no_cache__ for endpoint {toolkit.request.endpoint}')
         toolkit.request.environ['__no_cache__'] = True
