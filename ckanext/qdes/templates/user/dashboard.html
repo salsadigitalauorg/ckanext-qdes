@@ -4,7 +4,7 @@
     {{ super() }}
 
       {% if current_user and current_user.sysadmin or g.userobj.get_groups('organization', 'admin') or g.userobj.get_groups('organization', 'editor') %}
-          {{ h.build_nav_icon('qdes.dashboard_review_datasets', _('Review Datasets'), icon='check-square-o') }}
+          {{ h.build_nav_icon('qdes.dashboard_review_datasets', _('Review Datasets'), icon='check-square') }}
         {% endif %}
 
        {% if current_user and current_user.sysadmin %}
