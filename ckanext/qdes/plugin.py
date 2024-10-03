@@ -27,21 +27,21 @@ class QdesPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IMiddleware, inherit=True)
     plugins.implements(plugins.IConfigurable, inherit=True)
 
-
     # IConfigurer
+
     def update_config(self, config_):
         toolkit.add_template_directory(config_, 'templates')
         toolkit.add_public_directory(config_, 'public')
         toolkit.add_resource('fanstatic', 'qdes')
 
-        toolkit.add_ckan_admin_tab(toolkit.config, 
-                                    'qdes.api_tokens',
-                                    'API Tokens',
-                                    config_var='ckan.admin_tabs', 
-                                    icon=None)
-
+        toolkit.add_ckan_admin_tab(toolkit.config,
+                                   'qdes.api_tokens',
+                                   'API Tokens',
+                                   config_var='ckan.admin_tabs',
+                                   icon=None)
 
     # IConfigurer
+
     def update_config_schema(self, schema):
         ignore_missing = toolkit.get_validator('ignore_missing')
         is_positive_integer = toolkit.get_validator('is_positive_integer')
@@ -157,5 +157,6 @@ def update_email_subject(func):
         return notifications
 
     return update
+
 
 email_notifications._notifications_for_activities = update_email_subject(email_notifications._notifications_for_activities)
