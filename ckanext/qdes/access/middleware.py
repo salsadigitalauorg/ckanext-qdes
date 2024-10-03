@@ -1,6 +1,5 @@
 import logging
 import ckan.plugins.toolkit as toolkit
-import ckan.authz as authz
 import ckan.views.api as api
 
 log = logging.getLogger(__name__)
@@ -17,7 +16,7 @@ def qdes_access_before_request():
             log.warning(f'Unauthenticated access to {toolkit.request.endpoint}. Returning 403 Authorization Error.')
             return_dict = {}
             return_dict['error'] = {'__type': 'Authorization Error',
-                                        'message': toolkit._('Access denied')}
+                                    'message': toolkit._('Access denied')}
             return_dict['success'] = False
             toolkit.request.environ['__no_cache__'] = True
             return api._finish(403, return_dict, content_type='json')
