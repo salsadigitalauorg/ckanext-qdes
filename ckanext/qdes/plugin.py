@@ -4,7 +4,6 @@ import ckan.plugins.toolkit as toolkit
 import logging
 
 from ckan.common import _
-from ckan.logic import validators as core_validator
 from ckanext.activity.logic import validators as activity_validators
 from ckanext.qdes import blueprint, helpers, validators, middleware
 from ckanext.qdes.cli import get_commands
@@ -62,8 +61,8 @@ class QdesPlugin(plugins.SingletonPlugin):
 
     # IConfigurable
     def configure(self, config):
-        activity_validators.object_id_validators['new API token'] = core_validator.user_id_exists
-        activity_validators.object_id_validators['revoked API token'] = core_validator.user_id_exists
+        activity_validators.object_id_validators['new API token'] = "user_id_exists"
+        activity_validators.object_id_validators['revoked API token'] = "user_id_exists"
 
     # IBlueprint
     def get_blueprint(self):
