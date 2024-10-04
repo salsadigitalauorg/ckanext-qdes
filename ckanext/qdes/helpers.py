@@ -19,6 +19,8 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from flask import Response
 from urllib.parse import urlparse
+from ckanext.activity.model import Activity
+from ckanext.activity.model import activity as model_activity
 
 log = logging.getLogger(__name__)
 
@@ -218,7 +220,7 @@ def qdes_add_activity_for_private_pkg(context, pkg_dict, activity_type):
         else:
             user_id = 'not logged in'
 
-        activity = pkg.activity_stream_item(activity_type, user_id)
+        activity = Activity.activity_stream_item(pkg, activity_type, user_id)
         session.add(activity)
 
         return pkg_dict
@@ -227,7 +229,7 @@ def qdes_add_activity_for_private_pkg(context, pkg_dict, activity_type):
 
 
 def get_publication_status_history(pkg_id):
-    activity_stream = model.activity.package_activity_list(pkg_id, None, None)
+    activity_stream = model_activity.package_activity_list(pkg_id, None, None)
 
     history = []
     last_status = ''
