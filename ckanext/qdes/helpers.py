@@ -1,6 +1,5 @@
 import os
 import csv
-import time
 import zipfile
 import logging
 import ckan.model as model
@@ -12,17 +11,16 @@ from ckan.model import Session
 from ckan.model.package import Package
 from ckan.model.package_extra import PackageExtra
 import ckan.plugins.toolkit as tk
-from ckan.model.group import Group, Member
+from ckan.model.group import Group
 from ckan.model.api_token import ApiToken
 from ckan.plugins.toolkit import config, get_action, asbool
 from ckanext.qdes import constants
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from flask import Response
-from sqlalchemy import cast, asc, DateTime
-from ckan.lib.dictization import model_dictize
-from pprint import pformat
 from urllib.parse import urlparse
+from ckanext.activity.model import Activity
+from ckanext.activity.model import activity as model_activity
 
 log = logging.getLogger(__name__)
 
@@ -151,7 +149,7 @@ def qdes_zip_csv_files(files):
     Create a zip file to ./tmp directory and return the zip filename.
     """
     today = datetime.utcnow().strftime("%Y%m%d.%H:%M:%S")
-    filename = str(today) +'AuditReport.zip'
+    filename = str(today) + 'AuditReport.zip'
     zipf = zipfile.ZipFile(constants.TMP_PATH + '/' + filename, 'w', zipfile.ZIP_DEFLATED)
 
     for file in files:
@@ -222,7 +220,7 @@ def qdes_add_activity_for_private_pkg(context, pkg_dict, activity_type):
         else:
             user_id = 'not logged in'
 
-        activity = pkg.activity_stream_item(activity_type, user_id)
+        activity = Activity.activity_stream_item(pkg, activity_type, user_id)
         session.add(activity)
 
         return pkg_dict
@@ -231,7 +229,7 @@ def qdes_add_activity_for_private_pkg(context, pkg_dict, activity_type):
 
 
 def get_publication_status_history(pkg_id):
-    activity_stream = model.activity.package_activity_list(pkg_id, None, None)
+    activity_stream = model_activity.package_activity_list(pkg_id, None, None)
 
     history = []
     last_status = ''
@@ -362,6 +360,7 @@ def user_datasets(id):
 def get_followee_list(user_id):
     return get_action('followee_list')({}, {'id': user_id})
 
+
 def qdes_follow_button(obj_type, obj_id):
     obj_type = obj_type.lower()
     assert obj_type in _follow_objects
@@ -371,7 +370,7 @@ def qdes_follow_button(obj_type, obj_id):
         action = 'am_following_%s' % obj_type
         following = tk.get_action(action)(context, {'id': obj_id})
         return tk.render_snippet('snippets/qdes_follow_button.html',
-                       {'following': following,
-                       'obj_id': obj_id,
-                       'obj_type': obj_type })
+                                 {'following': following,
+                                  'obj_id': obj_id,
+                                  'obj_type': obj_type})
     return ''
