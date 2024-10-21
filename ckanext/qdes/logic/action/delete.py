@@ -1,5 +1,4 @@
 import ckan.plugins.toolkit as toolkit
-import ckan.lib.api_token as api_token
 import logging
 
 log = logging.getLogger(__name__)

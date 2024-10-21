@@ -1,15 +1,16 @@
 import ckan.model as model
-import ckan.lib.email_notifications as email_notifications
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 import logging
 
 from ckan.common import _
-from ckan.logic import validators as core_validator
+from ckanext.activity.logic import validators as activity_validators
 from ckanext.qdes import blueprint, helpers, validators, middleware
 from ckanext.qdes.cli import get_commands
 from ckanext.qdes.logic.action import get, create, delete
-from pprint import pformat
+
+import ckanext.activity.email_notifications as email_notifications
+
 
 log = logging.getLogger(__name__)
 
@@ -26,21 +27,21 @@ class QdesPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IMiddleware, inherit=True)
     plugins.implements(plugins.IConfigurable, inherit=True)
 
-
     # IConfigurer
+
     def update_config(self, config_):
         toolkit.add_template_directory(config_, 'templates')
         toolkit.add_public_directory(config_, 'public')
         toolkit.add_resource('fanstatic', 'qdes')
 
-        toolkit.add_ckan_admin_tab(toolkit.config, 
-                                    'qdes.api_tokens',
-                                    'API Tokens',
-                                    config_var='ckan.admin_tabs', 
-                                    icon=None)
-
+        toolkit.add_ckan_admin_tab(toolkit.config,
+                                   'qdes.api_tokens',
+                                   'API Tokens',
+                                   config_var='ckan.admin_tabs',
+                                   icon=None)
 
     # IConfigurer
+
     def update_config_schema(self, schema):
         ignore_missing = toolkit.get_validator('ignore_missing')
         is_positive_integer = toolkit.get_validator('is_positive_integer')
@@ -60,8 +61,8 @@ class QdesPlugin(plugins.SingletonPlugin):
 
     # IConfigurable
     def configure(self, config):
-        core_validator.object_id_validators['new API token'] = core_validator.user_id_exists
-        core_validator.object_id_validators['revoked API token'] = core_validator.user_id_exists
+        activity_validators.object_id_validators['new API token'] = "user_id_exists"
+        activity_validators.object_id_validators['revoked API token'] = "user_id_exists"
 
     # IBlueprint
     def get_blueprint(self):
@@ -79,8 +80,8 @@ class QdesPlugin(plugins.SingletonPlugin):
             'qdes_add_activity_for_private_pkg': helpers.qdes_add_activity_for_private_pkg,
             'get_publication_status_history': helpers.get_publication_status_history,
             'get_banner_image': helpers.get_banner_image,
-            'get_recently_created_datasets' : helpers.get_recently_created_datasets,
-            'get_most_popular_datasets' : helpers.get_most_popular_datasets,
+            'get_recently_created_datasets': helpers.get_recently_created_datasets,
+            'get_most_popular_datasets': helpers.get_most_popular_datasets,
             'get_dataset_totals_by_type': helpers.get_dataset_totals_by_type,
             'qdes_tracking_enabled': helpers.qdes_tracking_enabled,
             'user_datasets': helpers.user_datasets,
@@ -112,10 +113,10 @@ class QdesPlugin(plugins.SingletonPlugin):
         return get_commands()
 
     # IPackageController
-    def after_create(self, context, pkg_dict):
+    def after_dataset_create(self, context, pkg_dict):
         return helpers.qdes_add_activity_for_private_pkg(context, pkg_dict, 'new')
 
-    def after_update(self, context, pkg_dict):
+    def after_dataset_update(self, context, pkg_dict):
         return helpers.qdes_add_activity_for_private_pkg(context, pkg_dict, 'changed')
 
     # IValidators
@@ -128,7 +129,7 @@ class QdesPlugin(plugins.SingletonPlugin):
     def make_middleware(self, app, config):
         if toolkit.asbool(config.get('ckan.qdes.tracking_enabled', 'false')):
             return middleware.QdesTrackingMiddleware(app, config)
-        
+
 
 # Replace _notifications_for_activities function to replace the email subject.
 def update_email_subject(func):
@@ -156,5 +157,6 @@ def update_email_subject(func):
         return notifications
 
     return update
+
 
 email_notifications._notifications_for_activities = update_email_subject(email_notifications._notifications_for_activities)

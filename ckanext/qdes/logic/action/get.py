@@ -6,12 +6,9 @@ import ckanext.qdes.logic.helpers.report_helpers as qdes_logic_helpers
 import ckanext.scheming.helpers as scheming_helpers
 
 from ckan.lib.helpers import url_for
-from ckan.model import Session
 from ckanext.qdes import helpers
 from datetime import datetime
-from dateutil.relativedelta import relativedelta
-from pprint import pformat
-from sqlalchemy import func, or_
+from sqlalchemy import or_
 
 check_access = toolkit.check_access
 get_action = toolkit.get_action
@@ -24,6 +21,7 @@ def check_user_access_for_reports(context):
     # Check if the user is a system administrator or has permission to create a dataset in any organisation
     if not authz.is_sysadmin(context.get('user')) and not authz.has_user_permission_for_some_org(context.get('user'), 'create_dataset'):
         raise NotAuthorized()
+
 
 def review_datasets(context, data_dict):
     check_user_access_for_reports(context)
@@ -151,7 +149,6 @@ def qdes_datasets_with_empty_recommended_fields(context, config={}):
                             .qdes_empty_recommended_field_row(package, contact_point, missing_values, resource)
                         rows.append(row)
 
-
     return rows
 
 
@@ -226,7 +223,7 @@ def qdes_datasets_with_invalid_urls(context, config={}):
 
         if invalid_uri.get('type') == 'dataset' and entity_dict.get('state') == 'active':
             # Moved to helper function to reduce function size and avoid duplication
-            rows.append(qdes_logic_helpers.invalid_uri_csv_row(invalid_uri, point_of_contacts[contact_point_pos] ,entity_dict))
+            rows.append(qdes_logic_helpers.invalid_uri_csv_row(invalid_uri, point_of_contacts[contact_point_pos], entity_dict))
         elif invalid_uri.get('type') == 'resource' and parent_entity_dict.get('state') == 'active':
             # Moved to helper function to reduce function size and avoid duplication
             rows.append(qdes_logic_helpers.invalid_uri_csv_row(invalid_uri, point_of_contacts[contact_point_pos], parent_entity_dict, entity_dict))
