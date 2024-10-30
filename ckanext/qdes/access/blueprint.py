@@ -19,5 +19,5 @@ def unauthorised():
     return render(u'error_document_template.html', extra_vars)
 
 
-qdes_access.add_url_rule(u'/service/login', view_func=ckan_view_user.login)
+qdes_access.add_url_rule(u'/service/login', view_func=ckan_view_user.login, methods=[u'GET', u'POST'])
 qdes_access.add_url_rule(u'/user/unauthorised', view_func=unauthorised)

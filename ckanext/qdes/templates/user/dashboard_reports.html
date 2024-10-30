@@ -4,11 +4,12 @@
 <div class="row">
   <div class="col-xs-12 col-md-6">
     <form method="POST">
+      {{ h.csrf_input() }}
       <div class="form-group">
         <label for="org_id">{{ _('The organisation') }}</label>
         <select id="org_id" name="org_id" class="form-control">
           <option value="">{{ _('All') }}</option>
-          {% for org in h.qdes_organization_list(g.userobj.id) %}
+          {% for org in h.qdes_organization_list(current_user.id) %}
           <option value="{{ org.id }}" {% if request.args.get('org_id') == org.id %} selected="selected" {% endif %} >{{ org.name }}</option>
           {% endfor %}
         </select>
