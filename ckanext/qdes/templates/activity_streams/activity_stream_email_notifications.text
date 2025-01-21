@@ -1,11 +1,9 @@
-{%- set num = activities|length -%}
-{%- set site_title = "Queensland Environmental Science Data (QESD) catalogue" -%}
-
-{{ ungettext("You have {num} new activity on your {site_title} dashboard:", "You have {num} new activities on your {site_title} dashboard:", num).format(site_title=site_title, num=num) }}:
-
+{% set num = activities|length %}
+{% set site_title = "Queensland Environmental Science Data (QESD) catalogue" %}
+{{ ngettext("You have {num} new activity on your {site_title} dashboard:", "You have {num} new activities on your {site_title} dashboard:", num).format(site_title=g.site_title if g else site_title, num=num) }}
 {% for activity in activities -%}
     {%- set data = activity['data'] if activity['data'] else None -%}
-    {%- set activity_type = activity['activity_type'] if activity['activity_type'] else None -%}
+    {%- set activity_stream_detail = activity['activity_stream_detail'] if activity['activity_stream_detail'] else None -%}
     {%- if data -%}
         {%- if data['package'] -%}
             {%- set action = 'dataset_read' -%}
@@ -15,14 +13,12 @@
             {%- set id = data['group']['name'] if data['group']['name'] else activity['object_id'] -%}
         {%- endif -%}
     {%- endif -%}
-    {% if action and id %}{{ h.url_for(action, id=id, _external=True) }}{% if activity_type %} ({{ h.qdes_activity_stream_detail(activity_type)|capitalize }}){% endif %}{% endif %}
+    {% if action and id %}{% url_for action, id=id, _external=True %}{% if activity_stream_detail %} ({{ activity_stream_detail|capitalize }}){% endif %}{% endif %}
 {% endfor %}
 {{ _('To view your dashboard, click on this link:') }}
-
-{{ g.site_url + '/dashboard' }}
+{% url_for 'dashboard.index', _external=True %}
 
 {{ _('You can turn off these email notifications by updating your profile on the {site_title}. To change your preferences, click on this link:').format(site_title=site_title) }}
-
-{{ g.site_url + '/user/edit' }}
+{% url_for 'user.edit', _external=True %}
 
 Do not reply to this email.
