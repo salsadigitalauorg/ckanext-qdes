@@ -18,6 +18,7 @@
 {{ _('To view your dashboard, click on this link:') }}
 {% url_for 'dashboard.index', _external=True %}
 
-To unsubscribe from emails, please raise a support request through the help desk: https://it-partners.atlassian.net/servicedesk/customer/portal/13/
+To unsubscribe from emails, please raise a support request through the help desk: 
+https://it-partners.atlassian.net/servicedesk/customer/portal/13/
 
 Do not reply to this email.
