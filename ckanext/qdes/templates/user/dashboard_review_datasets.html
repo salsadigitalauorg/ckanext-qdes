@@ -64,7 +64,7 @@
                 {{ _('Edit') }}
               </a>
               <h3 class="dataset-heading">
-                {{ h.link_to(h.truncate(title, truncate_title), h.url_for(package.type ~ '.read', id=package.name)) }}
+                {{ h.link_to(h.truncate(title, truncate_title), h.url_for(package.type ~ '.read', id=package.name), title=title) }}
               </h3>
               <p>Due date: {{ due_date_formatted }}</p>
               <p>Last reviewed: {{ review_date }}</p>
