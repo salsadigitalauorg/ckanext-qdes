@@ -121,6 +121,8 @@ class QdesPlugin(plugins.SingletonPlugin):
 
     # IMiddleware
     def make_middleware(self, app, config):
+        app.session_interface = middleware.QdesRedisSession(app)
+
         if toolkit.asbool(config.get('ckan.qdes.tracking_enabled', 'false')):
             return middleware.QdesTrackingMiddleware(app, config)
 

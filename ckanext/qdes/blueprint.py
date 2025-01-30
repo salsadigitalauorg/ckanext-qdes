@@ -9,7 +9,6 @@ from ckanext.qdes import helpers
 from ckanext.qdes import constants
 from ckanext.qdes import jobs
 from flask import Blueprint
-from pprint import pformat
 
 clean_dict = logic.clean_dict
 tuplize_dict = logic.tuplize_dict
@@ -154,11 +153,12 @@ def contact():
 
     return render(u'contact_page.html', extra_vars={"content": config.get('ckanext.qdes_schema.contact', '')})
 
+
 def follows():
     # Only logged in user can access.
     if not g.userobj:
         abort(404, 'Not found')
-    
+
     dataset_followee_list = []
     dataservice_followee_list = []
     organisation_followee_list = []
@@ -194,7 +194,7 @@ def unfollowme(obj_id, obj_type):
         h.url_for(obj_type + '.follow', id=obj_id)
         return h.redirect_to('qdes.follows')
     return h.redirect_to('qdes.follows')
-    
+
 
 qdes.add_url_rule(u'/dashboard/review-datasets', view_func=dashboard_review_datasets, methods=[u'GET', u'POST'])
 qdes.add_url_rule(u'/dashboard/reports', view_func=dashboard_reports, methods=[u'GET', u'POST'])
