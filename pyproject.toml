@@ -3,7 +3,7 @@ name = "ckanext-qdes"
 version = "3.0.1"
 description = "CKAN extension for QDES"
 authors = [
-	{name = "Salsa Digital", email = ""},
+	{name = "Salsa Digital", email = "developers@salsa.digital"},
 	]
 maintainers = [
 	{name = "Mark Calvert", email = "mark.calvert@salsa.digital"},
@@ -38,5 +38,5 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project.entry-points."ckan.plugins"]
-qdes = ckanext.qdes.plugin:QdesPlugin
-qdes_access = ckanext.qdes.access.plugin:QdesAccessPlugin
+qdes = "ckanext.qdes.plugin:QdesPlugin"
+qdes_access = "ckanext.qdes.access.plugin:QdesAccessPlugin"
