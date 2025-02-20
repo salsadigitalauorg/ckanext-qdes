@@ -102,10 +102,6 @@ class QdesPlugin(plugins.SingletonPlugin):
             'api_token_activity_log': get.api_token_activity_log
         }
 
-    # IClick
-    def get_commands(self):
-        return get_commands()
-
     # IPackageController
     def after_dataset_create(self, context, pkg_dict):
         return helpers.qdes_add_activity_for_private_pkg(context, pkg_dict, 'new')
@@ -120,9 +116,9 @@ class QdesPlugin(plugins.SingletonPlugin):
         }
 
     # IMiddleware
-    def make_middleware(self, app, config):
-        if toolkit.asbool(config.get('ckan.qdes.tracking_enabled', 'false')):
-            return middleware.QdesTrackingMiddleware(app, config)
+    # def make_middleware(self, app, config):
+    #     if toolkit.asbool(config.get('ckan.qdes.tracking_enabled', 'false')):
+    #         return middleware.QdesTrackingMiddleware(app, config)
 
 
 # Replace _notifications_for_activities function to replace the email subject.
