@@ -2,3 +2,4 @@ include README.rst
 include LICENSE
 include requirements.txt
 recursive-include ckanext/qdes *.html *.json *.js *.less *.css *.mo
+recursive-include ckanext/qdes/public *.*

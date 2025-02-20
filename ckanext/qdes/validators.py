@@ -13,7 +13,7 @@ def validate_banner_image(key, flattened_data, errors, context):
     """
     # Get previous file, so we can remove it.
     banner_image = toolkit.config.get('ckanext.qdes.banner_image', '') or ''
-    
+
     # Upload image.
     upload = uploader.get_uploader('qdes-admin', banner_image)
     upload.update_data_dict(flattened_data, ('ckanext.qdes.banner_image',),

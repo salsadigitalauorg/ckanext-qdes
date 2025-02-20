@@ -54,6 +54,7 @@ def send_email_notifications(ctx):
     except Exception as e:
         log.error(e)
 
+
 @click.command(u"ckan-job-worker-monitor")
 def ckan_worker_job_monitor():
     try:
@@ -61,7 +62,8 @@ def ckan_worker_job_monitor():
         click.secho(u"CKAN job worker monitor added to worker queue", fg=u"green")
     except Exception as e:
         log.error(e)
-        
+
+
 @click.command(u"validate-datasets")
 @click.pass_context
 def validate_datasets(ctx):
@@ -73,6 +75,7 @@ def validate_datasets(ctx):
     except Exception as e:
         log.error(e)
     click.secho(f"Finished validating datasets", fg=u"green")
+
 
 def get_commands():
     return [generate_audit_reports, review_datasets, send_email_notifications, ckan_worker_job_monitor, validate_datasets]
