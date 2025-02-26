@@ -171,7 +171,6 @@ def validate_datasets():
     user = get_action('get_site_user')({'ignore_auth': True})
     context = {
         'user': user.get('name'),
-        'auth_user_obj': user,
         'ignore_auth': True,
     }
     p = SchemingDatasetsPlugin.instance
