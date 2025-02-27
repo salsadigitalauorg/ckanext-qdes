@@ -1,0 +1,6 @@
+{% ckan_extends %}
+
+{% block content_primary_nav %}
+  {{ super() }}
+  {{ h.build_nav_icon('qdes.api_tokens', _('API Tokens')) }}
+{% endblock %}
