@@ -5,7 +5,7 @@ import logging
 
 from ckan.common import _
 from ckanext.activity.logic import validators as activity_validators
-from ckanext.qdes import blueprint, helpers, validators, middleware
+from ckanext.qdes import blueprint, helpers, validators
 from ckanext.qdes.cli import get_commands
 from ckanext.qdes.logic.action import get, create, delete
 
@@ -21,10 +21,8 @@ class QdesPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.ITemplateHelpers)
     plugins.implements(plugins.IClick)
     plugins.implements(plugins.IActions)
-    plugins.implements(plugins.IClick)
     plugins.implements(plugins.IPackageController, inherit=True)
     plugins.implements(plugins.IValidators)
-    plugins.implements(plugins.IMiddleware, inherit=True)
     plugins.implements(plugins.IConfigurable, inherit=True)
 
     # IConfigurer
@@ -114,11 +112,6 @@ class QdesPlugin(plugins.SingletonPlugin):
         return {
             'validate_banner_image': validators.validate_banner_image
         }
-
-    # IMiddleware
-    # def make_middleware(self, app, config):
-    #     if toolkit.asbool(config.get('ckan.qdes.tracking_enabled', 'false')):
-    #         return middleware.QdesTrackingMiddleware(app, config)
 
 
 # Replace _notifications_for_activities function to replace the email subject.
