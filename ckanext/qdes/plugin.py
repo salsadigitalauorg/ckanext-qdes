@@ -132,7 +132,9 @@ def update_email_subject(func):
 
                         if not group.type == 'group':
                             activity['data']['group']['is_organization'] = True
-
+            # Get activity stream detail which is used in the email body activity_stream_email_notifications.text
+            if activity['activity_type']:
+                activity['activity_stream_detail'] = helpers.qdes_activity_stream_detail(activity['activity_type'])
         notifications = func(activities, user_dict)
         if notifications:
             notifications[0]['subject'] = _('QESD catalogue – activity on followed content')

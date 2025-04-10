@@ -40,20 +40,6 @@ def review_datasets(ctx):
     click.secho(u"Finished reviewing datasets", fg=u"green")
 
 
-@click.command(u"send-email-notifications")
-@click.pass_context
-def send_email_notifications(ctx):
-    try:
-        flask_app = ctx.meta['flask_app']
-        with flask_app.test_request_context():
-            site_user = get_action(u'get_site_user')({u'ignore_auth': True}, {})
-            context = {u'user': site_user[u'name']}
-            get_action('send_email_notifications')(context, {})
-
-            click.secho(u"Email notification sent", fg=u"green")
-    except Exception as e:
-        log.error(e)
-
 
 @click.command(u"ckan-job-worker-monitor")
 def ckan_worker_job_monitor():
@@ -78,4 +64,4 @@ def validate_datasets(ctx):
 
 
 def get_commands():
-    return [generate_audit_reports, review_datasets, send_email_notifications, ckan_worker_job_monitor, validate_datasets]
+    return [generate_audit_reports, review_datasets, ckan_worker_job_monitor, validate_datasets]
