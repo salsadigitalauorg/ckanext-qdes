@@ -21,6 +21,7 @@ from flask import Response
 from urllib.parse import urlparse
 from ckanext.activity.model import Activity
 from ckanext.activity.model import activity as model_activity
+from ckanext.tracking.model import TrackingSummary
 
 log = logging.getLogger(__name__)
 
@@ -270,20 +271,32 @@ def get_recently_created_datasets(limit=5):
     q = q.order_by(model.Package.metadata_created.desc())
     q = q.limit(limit)
 
-    return [dataset.as_dict() for dataset in q.all()]
+    # Tracking is now separate extension, we need to load dataset using package_show.
+    results = []
+    for dataset in q.all():
+        pkg_dict = get_action('package_show')({}, {'id': dataset.id})
+        results.append(pkg_dict)
+
+    return results
 
 
 def get_most_popular_datasets(limit=5):
     q = model.Session.query(model.Package)
-    q = q.join(model.TrackingSummary, model.TrackingSummary.package_id == model.Package.id)
-    q = q.filter(model.TrackingSummary.package_id != '~~not~found~~')
+    q = q.join(TrackingSummary, TrackingSummary.package_id == model.Package.id)
+    q = q.filter(TrackingSummary.package_id != '~~not~found~~')
     q = q.filter(model.Package.state == model.core.State.ACTIVE)
     q = q.filter(model.Package.private == False)
-    q = q.order_by(model.TrackingSummary.tracking_date.desc())
-    q = q.order_by(model.TrackingSummary.running_total.desc())
+    q = q.order_by(TrackingSummary.tracking_date.desc())
+    q = q.order_by(TrackingSummary.running_total.desc())
     q = q.limit(limit)
 
-    return [dataset.as_dict() for dataset in q.all()]
+    # Tracking is now separate extension, we need to load dataset using package_show.
+    results = []
+    for dataset in q.all():
+        pkg_dict = get_action('package_show')({}, {'id': dataset.id})
+        results.append(pkg_dict)
+
+    return results
 
 
 def get_dataset_totals_by_type(dataset_type):
