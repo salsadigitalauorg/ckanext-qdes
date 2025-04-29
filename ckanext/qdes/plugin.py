@@ -5,7 +5,7 @@ import logging
 
 from ckan.common import _
 from ckanext.activity.logic import validators as activity_validators
-from ckanext.qdes import blueprint, helpers, validators, middleware
+from ckanext.qdes import blueprint, helpers, validators
 from ckanext.qdes.cli import get_commands
 from ckanext.qdes.logic.action import get, create, delete
 
@@ -21,10 +21,8 @@ class QdesPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.ITemplateHelpers)
     plugins.implements(plugins.IClick)
     plugins.implements(plugins.IActions)
-    plugins.implements(plugins.IClick)
     plugins.implements(plugins.IPackageController, inherit=True)
     plugins.implements(plugins.IValidators)
-    plugins.implements(plugins.IMiddleware, inherit=True)
     plugins.implements(plugins.IConfigurable, inherit=True)
 
     # IConfigurer
@@ -32,13 +30,7 @@ class QdesPlugin(plugins.SingletonPlugin):
     def update_config(self, config_):
         toolkit.add_template_directory(config_, 'templates')
         toolkit.add_public_directory(config_, 'public')
-        toolkit.add_resource('fanstatic', 'qdes')
-
-        toolkit.add_ckan_admin_tab(toolkit.config,
-                                   'qdes.api_tokens',
-                                   'API Tokens',
-                                   config_var='ckan.admin_tabs',
-                                   icon=None)
+        toolkit.add_resource('assets', 'qdes')
 
     # IConfigurer
 
@@ -108,10 +100,6 @@ class QdesPlugin(plugins.SingletonPlugin):
             'api_token_activity_log': get.api_token_activity_log
         }
 
-    # IClick
-    def get_commands(self):
-        return get_commands()
-
     # IPackageController
     def after_dataset_create(self, context, pkg_dict):
         return helpers.qdes_add_activity_for_private_pkg(context, pkg_dict, 'new')
@@ -124,11 +112,6 @@ class QdesPlugin(plugins.SingletonPlugin):
         return {
             'validate_banner_image': validators.validate_banner_image
         }
-
-    # IMiddleware
-    def make_middleware(self, app, config):
-        if toolkit.asbool(config.get('ckan.qdes.tracking_enabled', 'false')):
-            return middleware.QdesTrackingMiddleware(app, config)
 
 
 # Replace _notifications_for_activities function to replace the email subject.
