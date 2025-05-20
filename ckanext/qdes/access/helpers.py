@@ -17,7 +17,7 @@ from ckan.plugins.toolkit import (
 log = logging.getLogger(__name__)
 
 
-def has_user_access_to_update_members_for_organsation(context, data_dict):
+def has_user_access_to_update_members_for_organisation(context, data_dict):
     group = logic_auth.get_group_object(context, data_dict)
     user = context.get('user')
 
@@ -58,7 +58,18 @@ def generate_password():
 
 
 def get_organisation_mapping():
-    return get_converter('json_or_string')(config.get('ckanext.qdes_access.saml_organisation_mapping'))
+    group_extras = model.Session \
+        .query(model.GroupExtra) \
+        .filter(model.GroupExtra.key == 'ad_groups') \
+        .filter(model.GroupExtra.state == 'active').all()
+
+    organisation_mapping = {}
+    for group_extra in group_extras:
+        ad_groups = get_converter('json_or_string')(group_extra.value or [])
+        for ad_group in ad_groups if isinstance(ad_groups, list) else []:
+            organisation_mapping[ad_group.get('group')] = {"org_id": group_extra.group_id, "role": ad_group.get('role')}
+
+    return organisation_mapping
 
 
 def get_read_only_saml_groups():
@@ -84,7 +95,7 @@ def saml_group_mapping_exist(saml_groups):
         return False
 
 
-def update_user_organasitions(user, saml_groups):
+def update_user_organisations(user, saml_groups):
     context = get_context_with_site_user()
 
     remove_user_from_all_organisations(context, user)
@@ -113,7 +124,7 @@ def remove_user_from_all_organisations(context, user):
     # Remove user's access from its current organisations, saml2 groups are the source of truth
     # Get organisations that the user has a permission for
     organisation_list_for_user = get_action('organization_list_for_user')(context, {"id": user})
-    log.debug('Removing {0} from all its current organasition roles'.format(user))
+    log.debug('Removing {0} from all its current organisation roles'.format(user))
     for organisation in organisation_list_for_user or []:
         remove_organisation_member(context, user, organisation.get('name'), organisation.get('capacity'))
 
@@ -124,19 +135,19 @@ def remove_organisation_member(context, user, org_name, role):
         'id': org_name,
         'role': role,
     }
-    log.debug('Removing {0} member role from organasation {1}'.format(user, member_dict))
+    log.debug('Removing {0} member role from organisation {1}'.format(user, member_dict))
     get_action('organization_member_delete')(context, member_dict)
 
 
 def add_organisation_member(context, user, org_name, role):
     # Only add a saml role if org_name has a value and the role exist in ckan roles list
-    if org_name != None and role in [role.get('value') for role in authz.roles_list()]:
+    if org_name is not None and role in [role.get('value') for role in authz.roles_list()]:
         member_dict = {
             'username': user,
             'id': org_name,
             'role': role,
         }
-        log.debug('Adding {0} member role to organasation: {1}'.format(user, member_dict))
+        log.debug('Adding {0} member role to organisation: {1}'.format(user, member_dict))
         get_action('organization_member_create')(context, member_dict)
         return True
     else:
@@ -145,7 +156,7 @@ def add_organisation_member(context, user, org_name, role):
 
 
 def update_user_sysadmin_status(userobj, saml_sysadmin_group, groups):
-    if userobj == None:
+    if not userobj:
         return
 
     if userobj.sysadmin and saml_sysadmin_group not in groups:
@@ -163,7 +174,7 @@ def update_user_sysadmin_status(userobj, saml_sysadmin_group, groups):
 
 
 def delete_user(userobj):
-    if userobj == None:
+    if not userobj:
         return
 
     context = get_context_with_site_user()
