@@ -67,7 +67,7 @@ def get_organisation_mapping():
     for group_extra in group_extras:
         ad_groups = get_converter('json_or_string')(group_extra.value or [])
         for ad_group in ad_groups if isinstance(ad_groups, list) else []:
-            organisation_mapping[ad_group.get('group')] = {"org_id": group_extra.group_id, "role": ad_group.get('role')}
+            organisation_mapping[ad_group.get('group')] = {"org_name": group_extra.group_id, "role": ad_group.get('role')}
 
     return organisation_mapping
 
