@@ -67,7 +67,7 @@ def get_organisation_mapping():
     for group_extra in group_extras:
         ad_groups = get_converter('json_or_string')(group_extra.value or [])
         for ad_group in ad_groups if isinstance(ad_groups, list) else []:
-            organisation_mapping[ad_group.get('group')] = {"org_name": group_extra.group_id, "role": ad_group.get('role')}
+            organisation_mapping[ad_group.get('group')] = {"org_id": group_extra.group_id, "role": ad_group.get('role')}
 
     return organisation_mapping
 
@@ -112,12 +112,12 @@ def update_user_organisations(user, saml_groups):
             if org_map in saml_groups:
                 organisation = organisation_mapping[org_map]
                 log.debug('SAML group found in organisation_mapping: {0}'.format(organisation))
-                org_name = organisation.get('org_name', None)
+                org_id = organisation.get('org_id', None)
                 org_role = organisation.get('role', None)
-                if org_name not in organisations_added and add_organisation_member(context, user, org_name, org_role):
+                if org_id not in organisations_added and add_organisation_member(context, user, org_id, org_role):
                     # If adding organisation member was successful we add it to the list as only 1 (the highest) role is assigned per organisation
-                    log.debug('Member role "{0}" was successfully added to organisation "{1}"'.format(org_role, org_name))
-                    organisations_added.append(org_name)
+                    log.debug('Member role "{0}" was successfully added to organisation "{1}"'.format(org_role, org_id))
+                    organisations_added.append(org_id)
 
 
 def remove_user_from_all_organisations(context, user):
@@ -129,22 +129,22 @@ def remove_user_from_all_organisations(context, user):
         remove_organisation_member(context, user, organisation.get('name'), organisation.get('capacity'))
 
 
-def remove_organisation_member(context, user, org_name, role):
+def remove_organisation_member(context, user, org_id, role):
     member_dict = {
         'username': user,
-        'id': org_name,
+        'id': org_id,
         'role': role,
     }
     log.debug('Removing {0} member role from organisation {1}'.format(user, member_dict))
     get_action('organization_member_delete')(context, member_dict)
 
 
-def add_organisation_member(context, user, org_name, role):
-    # Only add a saml role if org_name has a value and the role exist in ckan roles list
-    if org_name is not None and role in [role.get('value') for role in authz.roles_list()]:
+def add_organisation_member(context, user, org_id, role):
+    # Only add a saml role if org_id has a value and the role exist in ckan roles list
+    if org_id is not None and role in [role.get('value') for role in authz.roles_list()]:
         member_dict = {
             'username': user,
-            'id': org_name,
+            'id': org_id,
             'role': role,
         }
         log.debug('Adding {0} member role to organisation: {1}'.format(user, member_dict))
