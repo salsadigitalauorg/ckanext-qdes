@@ -1,0 +1,63 @@
+{% extends "organization/edit_base.html" %}
+
+{% import 'macros/form.html' as form %}
+
+{% set user = user_dict %}
+
+{% block subtitle %}{{ _('Add AD Group') }} {{ g.template_title_delimiter }} {{ super() }}{% endblock %}
+
+{% block primary_content_inner %}
+  {% link_for _('Back to all AD groups'), named_route='qdes_access.ad_groups', id=group_dict.name, class_='btn btn-default pull-right', icon='arrow-left' %}
+  <h1 class="page-heading">
+    {% block page_heading %}{{ _('Add AD Group') }}{% endblock %}
+  </h1>
+  {% block form %}
+  <form class="dataset-form add-member-form" method='post'>
+    {{ h.csrf_input() if 'csrf_input' in h }}
+    <div class="row">
+      <div class="col-md">
+        <div class="form-group control-medium">
+          <label class="control-label" for="ad_group">
+            {{ _('New AD Group') }}
+          </label>
+          <p>
+            {{ _('Enter the AD group fullname with domain name included') }}
+          </p>
+          <div class="controls">
+            <input id="ad_group" type="text" name="ad_group" class="form-control" placeholder="{{ _('AD group') }}" >
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% set format_attrs = {'data-module': 'autocomplete'} %}
+    {{ form.select('role', label=_('Role'), options=roles, selected=user_role, error='', attrs=format_attrs) }}
+
+    <div class="form-actions">
+        <button class="btn btn-primary" type="submit" name="submit" >
+          {{ _('Add AD Group') }}
+        </button>
+    </div>
+  </form>
+  {% endblock %}
+{% endblock %}
+
+{% block secondary_content %}
+{{ super() }}
+<div class="module module-narrow module-shallow">
+  <h2 class="module-heading">
+    <i class="fa fa-lg fa-info-circle"></i>
+    {{ _('What are roles?') }}
+  </h2>
+  <div class="module-content">
+    {% trans %}
+      <p><strong>Admin:</strong> Can add/edit and delete datasets, as well as
+        manage organization members.</p>
+      <p><strong>Editor:</strong> Can add and edit datasets, but not manage
+        organization members.</p>
+      <p><strong>Member:</strong> Can view the organization's private
+        datasets, but not add new datasets.</p>
+    {% endtrans %}
+  </div>
+</div>
+{% endblock %}

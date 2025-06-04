@@ -33,7 +33,10 @@ class QdesAccessPlugin(plugins.SingletonPlugin):
             'member_create': auth_create.member_create,
             'member_delete': auth_delete.member_delete,
             'user_reset': auth_get.user_reset,
-            'request_reset': auth_get.request_reset
+            'request_reset': auth_get.request_reset,
+            'get_organisation_ad_groups': auth_get.organisation_ad_groups,
+            'create_organisation_ad_group': auth_create.organisation_ad_group,
+            'delete_organisation_ad_group': auth_delete.organisation_ad_group
         }
 
     # IMiddleware
@@ -60,7 +63,8 @@ class QdesAccessPlugin(plugins.SingletonPlugin):
     def after_saml2_login(self, resp, saml_attributes):
         saml_user_group = toolkit.config.get(u'ckanext.qdes_access.saml_user_group', None)
         saml_sysadmin_group = toolkit.config.get(u'ckanext.qdes_access.saml_sysadmin_group', None)
-        # If saml_user_group is configured, user cannot login with out a successful SAML group mapping to either organisation_mapping or saml_sysadmin_group/read_only_saml_groups
+        # If saml_user_group is configured
+        # user cannot login with out a successful SAML group mapping to either organisation_mapping or saml_sysadmin_group/read_only_saml_groups
         if saml_user_group:
             log.debug('Looking for SAML group with value: {}'.format(saml_user_group))
             groups = saml_attributes.get(saml_user_group, [])
@@ -71,7 +75,7 @@ class QdesAccessPlugin(plugins.SingletonPlugin):
             if userobj.sysadmin:
                 return resp
             elif helpers.saml_group_mapping_exist(groups):
-                helpers.update_user_organasitions(userobj.name, groups)
+                helpers.update_user_organisations(userobj.name, groups)
             else:
                 log.warning('User {0} groups {1} does not exists'.format(userobj.fullname, groups))
                 # Delete user and override login response with a redirect response to the unauthorised page
