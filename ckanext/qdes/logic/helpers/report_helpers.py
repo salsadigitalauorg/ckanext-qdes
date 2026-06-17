@@ -5,6 +5,7 @@ from ckan.model import Session
 from ckan.model.group import Group
 from ckan.model.package import Package
 from ckan.model.package_extra import PackageExtra
+from ckan.model.resource import Resource
 from ckanext.qdes.helpers import qdes_get_dataset_review_period
 from ckanext.invalid_uris.model import InvalidUri
 from ckanext.vocabulary_services.secure.helpers import get_secure_vocabulary_record
@@ -30,10 +31,17 @@ def get_point_of_contact(context, pos_id=None):
     above - it returns the full point of contact dict so that
     you only need to lookup the secure CV once, and then use the
     dict properties instead of looking up the secure CV per property
-    you want to use
+    you want to use.
+
+    Returns an empty dict when pos_id is not provided, or when the
+    vocabulary record cannot be resolved (e.g. stale/orphaned reference).
     """
     if pos_id:
-        return get_secure_vocabulary_record('point-of-contact', pos_id, context)
+        record = get_secure_vocabulary_record('point-of-contact', pos_id, context)
+        if record is not None:
+            return record
+
+    return {}
 
 
 def qdes_get_organization_list():
@@ -125,34 +133,126 @@ def qdes_empty_recommended_field_row(package, point_of_contact, missing_values, 
     }
 
 
-def qdes_get_list_of_invalid_uris():
-    """
-    Helper function to return a list of entities that have invalid uri.
-    """
-    # Get list of invalid uris.
-    invalid_uris = Session.query(InvalidUri).all()
+def _qdes_package_dict_with_organization(package):
+    package_dict = package.as_dict()
 
-    # Build package list.
-    entities = {}
-    for uri in invalid_uris:
-        if uri.entity_id in entities:
-            entities[uri.entity_id]['fields'].append(uri.field)
-        else:
-            entities[uri.entity_id] = {
-                'type': uri.entity_type,
-                'fields': [uri.field],
+    organization = None
+    if package.owner_org:
+        organization = Session.query(Group).filter(Group.id == package.owner_org).first()
+
+    package_dict['organization'] = organization.as_dict() if organization else {}
+
+    return package_dict
+
+
+def qdes_get_invalid_uri_entities(org_id=None):
+    """
+    Return invalid URI entities with package/resource data in bulk.
+
+    This avoids calling package_show/resource_show repeatedly.
+    """
+
+    entities = []
+
+    # Dataset-level invalid URIs.
+    dataset_rows = Session.query(
+        InvalidUri,
+        Package
+    ).join(
+        Package,
+        Package.id == InvalidUri.entity_id
+    ).filter(
+        InvalidUri.entity_type == 'dataset'
+    ).filter(
+        Package.state == 'active'
+    ).filter(
+        Package.type != 'dataservice'
+    ).order_by(
+        Package.title,
+        InvalidUri.id
+    )
+
+    if org_id:
+        dataset_rows = dataset_rows.filter(Package.owner_org == org_id)
+
+    # Group the flat rows by entity_id.
+    dataset_groups = {}
+    for invalid_uri, package in dataset_rows.all():
+        entity_id = invalid_uri.entity_id
+        if entity_id not in dataset_groups:
+            dataset_groups[entity_id] = {
+                'invalid_uri': {
+                    'type': 'dataset',
+                    'fields': [],
+                    'uris': [],
+                },
+                'package': _qdes_package_dict_with_organization(package),
+                'resource': {},
             }
+        dataset_groups[entity_id]['invalid_uri']['fields'].append(invalid_uri.field)
+        dataset_groups[entity_id]['invalid_uri']['uris'].append(invalid_uri.uri)
+
+    for entity_id in dataset_groups:
+        entities.append(dataset_groups[entity_id])
+
+    # Resource-level invalid URIs.
+    resource_rows = Session.query(
+        InvalidUri,
+        Package,
+        Resource
+    ).join(
+        Resource,
+        Resource.id == InvalidUri.entity_id
+    ).join(
+        Package,
+        Package.id == Resource.package_id
+    ).filter(
+        InvalidUri.entity_type == 'resource'
+    ).filter(
+        Package.state == 'active'
+    ).filter(
+        Package.type != 'dataservice'
+    ).order_by(
+        Package.title,
+        InvalidUri.id
+    )
+
+    if org_id:
+        resource_rows = resource_rows.filter(Package.owner_org == org_id)
+
+    # Group the flat rows by entity_id.
+    resource_groups = {}
+    for invalid_uri, package, resource in resource_rows.all():
+        entity_id = invalid_uri.entity_id
+        if entity_id not in resource_groups:
+            resource_groups[entity_id] = {
+                'invalid_uri': {
+                    'type': 'resource',
+                    'fields': [],
+                    'uris': [],
+                },
+                'package': _qdes_package_dict_with_organization(package),
+                'resource': resource.as_dict(),
+            }
+        resource_groups[entity_id]['invalid_uri']['fields'].append(invalid_uri.field)
+        resource_groups[entity_id]['invalid_uri']['uris'].append(invalid_uri.uri)
+
+    for entity_id in resource_groups:
+        entities.append(resource_groups[entity_id])
 
     return entities
 
 
-def invalid_uri_csv_row(invalid_uri, point_of_contact, package, resource={}):
+def invalid_uri_csv_row(invalid_uri, point_of_contact, package, resource=None):
     """
     Helper function to return a dict for a CSV row
     Can be used for either package or resource rows
     """
-    # Setup any values we use multiple times below
+    if resource is None:
+        resource = {}
+
     package_id = package.get('id', None)
+    extras = package.get('extras', {}) or {}
 
     resource_uri = url_for('dataset_resource.read',
                            resource_id=resource.get('id'),
@@ -161,15 +261,25 @@ def invalid_uri_csv_row(invalid_uri, point_of_contact, package, resource={}):
                            _external=True
                            ) if resource else ''
 
+    uris = invalid_uri.get('uris', []) or []
+    fields = invalid_uri.get('fields', []) or []
+
+    invalid_url_pairs = []
+    for i in range(len(fields)):
+        invalid_url_pairs.append({
+            'field': fields[i],
+            'url': uris[i] if i < len(uris) else '',
+        })
+
     return {
         'Dataset name': package.get('title', package.get('name', '')),
         'Link to dataset (URI)': url_for('dataset.read', id=package_id, _external=True),
         'Resource name': resource.get('name', ''),
         'Link to resource': resource_uri,
-        'Dataset creator': package.get('contact_creator', ''),
+        'Dataset creator': extras.get('contact_creator', ''),
         'Point of contact - name': point_of_contact.get('Name', ''),
         'Point of contact - email': point_of_contact.get('Email', ''),
-        'List of fields with broken links': ', '.join(invalid_uri.get('fields', [])),
+        'Invalid URLs': invalid_url_pairs,
         'Organisation name': package.get('organization').get('title', ''),
     }
 

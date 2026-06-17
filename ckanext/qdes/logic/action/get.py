@@ -61,10 +61,10 @@ def qdes_datasets_not_updated(context, config={}):
         org_dict = qdes_logic_helpers.qdes_get_organization_dict_by_id(pkg_dict.get('owner_org'), organizations)
 
         # Load and cache point of contacts.
+        # get_point_of_contact always returns a dict (never None), so .get() calls below are safe.
         contact_point_pos = extras.get('contact_point', None)
-        if not contact_point_pos in point_of_contacts:
-            point_of_contacts[contact_point_pos] = qdes_logic_helpers \
-                .get_point_of_contact(context, contact_point_pos) if contact_point_pos else {}
+        if contact_point_pos not in point_of_contacts:
+            point_of_contacts[contact_point_pos] = qdes_logic_helpers.get_point_of_contact(context, contact_point_pos)
 
         rows.append({
             'Dataset name': pkg_dict.get('title', pkg_dict.get('name', '')),
@@ -112,10 +112,10 @@ def qdes_datasets_with_empty_recommended_fields(context, config={}):
         for package in packages:
             if package.get('state') == 'active':
                 # Load and cache point of contacts.
+                # get_point_of_contact always returns a dict (never None), so .get() calls below are safe.
                 contact_point_pos = package.get('contact_point', None)
-                if not contact_point_pos in point_of_contacts:
-                    point_of_contacts[contact_point_pos] = qdes_logic_helpers \
-                        .get_point_of_contact(context, contact_point_pos) if contact_point_pos else {}
+                if contact_point_pos not in point_of_contacts:
+                    point_of_contacts[contact_point_pos] = qdes_logic_helpers.get_point_of_contact(context, contact_point_pos)
 
                 # Get package organization.
                 pkg_org = package.get('organization')
@@ -160,73 +160,32 @@ def qdes_datasets_with_invalid_urls(context, config={}):
 
     org_id = config.get('org_id', None)
 
-    # Get list of invalid uris.
-    entities = qdes_logic_helpers.qdes_get_list_of_invalid_uris()
-
-    # Build rows.
     rows = []
-    packages = {}
-    resources = {}
     point_of_contacts = {}
-    for entity_id, invalid_uri in entities.items():
-        # Load entity and cache them.
-        entity_dict = {}
-        parent_entity_dict = {}
 
-        if invalid_uri.get('type') == 'dataset':
-            entity_dict = packages.get(entity_id, None)
-            if not entity_dict:
-                try:
-                    entity_dict = get_action('package_show')(context, {'id': entity_id})
+    entities = qdes_logic_helpers.qdes_get_invalid_uri_entities(org_id)
 
-                    if (org_id and entity_dict.get('owner_org') != org_id) \
-                            or entity_dict.get('type') == 'dataservice':
-                        continue
-                except Exception as e:
-                    log.error(str(e), exc_info=True)
-                    continue
+    for entity in entities:
+        package_dict = entity.get('package')
+        resource_dict = entity.get('resource', {})
+        invalid_uri = entity.get('invalid_uri')
 
-                # Cache the result.
-                packages[entity_id] = entity_dict
-        elif invalid_uri.get('type') == 'resource':
-            if entity_id in resources:
-                entity_dict = resources.get(entity_id)
-                parent_entity_dict = packages.get(resources.get('package_id'))
-            else:
-                try:
-                    entity_dict = get_action('resource_show')(context, {'id': entity_id})
-
-                    parent_entity_dict = packages.get(entity_dict.get('package_id'), None)
-
-                    if not parent_entity_dict:
-                        parent_entity_dict = get_action('package_show')(context, {'id': entity_dict.get('package_id')})
-
-                        if org_id and parent_entity_dict.get('owner_org') != org_id:
-                            continue
-
-                        # Cache the package result.
-                        packages[entity_id] = parent_entity_dict
-
-                    # Cache the resource result.
-                    resources[entity_id] = entity_dict
-                except Exception as e:
-                    log.error(str(e), exc_info=True)
-                    continue
+        extras = package_dict.get('extras', {}) or {}
+        contact_point_pos = extras.get('contact_point', None)
 
         # Load and cache point of contacts.
-        contact_point_pos = entity_dict.get('contact_point', None) \
-            if invalid_uri.get('type') == 'dataset' \
-            else parent_entity_dict.get('contact_point', None)
-        if not contact_point_pos in point_of_contacts:
-            point_of_contacts[contact_point_pos] = qdes_logic_helpers \
-                .get_point_of_contact(context, contact_point_pos) if contact_point_pos else {}
+        # get_point_of_contact always returns a dict (never None), so .get() calls below are safe.
+        if contact_point_pos not in point_of_contacts:
+            point_of_contacts[contact_point_pos] = qdes_logic_helpers.get_point_of_contact(context, contact_point_pos)
 
-        if invalid_uri.get('type') == 'dataset' and entity_dict.get('state') == 'active':
-            # Moved to helper function to reduce function size and avoid duplication
-            rows.append(qdes_logic_helpers.invalid_uri_csv_row(invalid_uri, point_of_contacts[contact_point_pos], entity_dict))
-        elif invalid_uri.get('type') == 'resource' and parent_entity_dict.get('state') == 'active':
-            # Moved to helper function to reduce function size and avoid duplication
-            rows.append(qdes_logic_helpers.invalid_uri_csv_row(invalid_uri, point_of_contacts[contact_point_pos], parent_entity_dict, entity_dict))
+        rows.append(
+            qdes_logic_helpers.invalid_uri_csv_row(
+                invalid_uri,
+                point_of_contacts.get(contact_point_pos, {}),
+                package_dict,
+                resource_dict
+            )
+        )
 
     return rows
 
@@ -256,10 +215,10 @@ def qdes_datasets_not_reviewed(context, config):
             .qdes_get_organization_dict_by_id(pkg_dict.get('owner_org'), organizations)
 
         # Load and cache point of contacts.
+        # get_point_of_contact always returns a dict (never None), so .get() calls below are safe.
         contact_point_pos = extras.get('contact_point', None)
-        if not contact_point_pos in point_of_contacts:
-            point_of_contacts[contact_point_pos] = qdes_logic_helpers \
-                .get_point_of_contact(context, contact_point_pos) if contact_point_pos else {}
+        if contact_point_pos not in point_of_contacts:
+            point_of_contacts[contact_point_pos] = qdes_logic_helpers.get_point_of_contact(context, contact_point_pos)
 
         rows.append({
             'Dataset ID': pkg_dict.get('id', ''),
