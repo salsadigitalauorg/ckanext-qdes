@@ -156,7 +156,7 @@ def qdes_datasets_with_invalid_urls(context, config={}):
     u"""
     List of all datasets with broken links to resources.
     """
-    check_user_access_for_reports(context)
+    check_access('sysadmin', context)
 
     org_id = config.get('org_id', None)
 

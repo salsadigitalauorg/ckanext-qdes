@@ -209,6 +209,8 @@ def qdes_get_invalid_uri_entities(org_id=None):
     ).filter(
         InvalidUri.entity_type == 'resource'
     ).filter(
+        Resource.state == 'active'
+    ).filter(
         Package.state == 'active'
     ).filter(
         Package.type != 'dataservice'

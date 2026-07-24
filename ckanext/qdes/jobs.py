@@ -85,10 +85,6 @@ def generate_reports():
     csv_files = []
     for report in available_actions:
         rows = get_action(report)(context, {'org_id': None})
-
-        if report == 'qdes_datasets_with_invalid_urls':
-            helpers.format_invalid_urls_for_csv(rows)
-
         csv_file = helpers.qdes_generate_csv(available_actions.get(report), rows)
 
         if csv_file:

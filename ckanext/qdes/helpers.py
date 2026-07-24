@@ -141,6 +141,7 @@ def qdes_generate_csv(title, rows):
     """
     filename = ''
     if rows:
+        format_invalid_urls_for_csv(rows)
         date = render_datetime(datetime.utcnow(), date_format='%Y-%m-%d')
         filename = 'audit-' + str(date) + '-' + title + '.csv'
 

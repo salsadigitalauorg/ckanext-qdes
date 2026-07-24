@@ -97,6 +97,10 @@ def dashboard_reports():
 
 
 def reports(type):
+    # Only sysadmin can access.
+    if not g.userobj.sysadmin:
+        abort(404, 'Not found')
+
     types = {
         'not-updated': 'not-updated',
         'not-reviewed': 'not-reviewed',
