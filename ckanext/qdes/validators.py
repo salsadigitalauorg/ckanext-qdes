@@ -1,6 +1,5 @@
 import ckan.plugins.toolkit as toolkit
 import ckan.lib.uploader as uploader
-import ckan.lib.navl.dictization_functions as df
 import logging
 
 

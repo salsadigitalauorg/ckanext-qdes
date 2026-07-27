@@ -9,7 +9,6 @@ from ckanext.qdes import helpers
 from ckanext.qdes import constants
 from ckanext.qdes import jobs
 from flask import Blueprint
-from pprint import pformat
 
 clean_dict = logic.clean_dict
 tuplize_dict = logic.tuplize_dict
@@ -39,7 +38,7 @@ def dashboard_review_datasets():
         data = clean_dict(dict_fns.unflatten(tuplize_dict(parse_params(request.form))))
 
         if 'dataset' in data:
-            if not type(data['dataset']) is list:
+            if type(data['dataset']) is not list:
                 data['dataset'] = list([data['dataset']])
 
             toolkit.enqueue_job(jobs.mark_as_reviewed, args=[data['dataset']], rq_kwargs={u'timeout': 3600}, title="Review Datasets")
@@ -104,7 +103,7 @@ def reports(type):
         'incomplete-recommended': 'recommended',
     }
 
-    if not type in types:
+    if type not in types:
         abort(404, 'Not found')
 
     # Get the latest report directory.

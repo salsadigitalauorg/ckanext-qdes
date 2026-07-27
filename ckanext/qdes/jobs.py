@@ -146,7 +146,7 @@ def mark_as_reviewed(datasets):
             except Exception as e:
                 log.error(str(e))
         # Because we set defer_commit = True we need to make sure we commit all the updates to the model.repo
-        log.info(f'Committing updates to database')
+        log.info('Committing updates to database')
         model.repo.commit()
         log.info(f'Finished marking {len(datasets)} datasets as reviewed')
     except Exception as e:
@@ -157,11 +157,11 @@ def ckan_worker_job_monitor():
     monitor_url = os.environ.get('MONITOR_QDES_JOBWORKER')
     try:
         if monitor_url:
-            log.info(f'Sending notification for CKAN worker job monitor')
+            log.info('Sending notification for CKAN worker job monitor')
             requests.get(monitor_url, timeout=10)
-            log.info(f'Successfully sent notification for CKAN worker job monitor')
+            log.info('Successfully sent notification for CKAN worker job monitor')
         else:
-            log.error(f'The env variable MONITOR_QDES_JOBWORKER is not set for CKAN worker job monitor')
+            log.error('The env variable MONITOR_QDES_JOBWORKER is not set for CKAN worker job monitor')
     except requests.RequestException as e:
         log.error(f'Failed to send ckan worker job monitor notification to {monitor_url}')
         log.error(str(e))
@@ -254,6 +254,6 @@ def validate_datasets():
                 body_html = render('emails/body/validate_datasets.html', {'datasets': validation_errors})
                 mail_recipient(recipient_name, recipient_email, subject, body, body_html)
             else:
-                log.error(f'validation_error_recipient_email is not set')
+                log.error('validation_error_recipient_email is not set')
         except Exception as e:
             log.error(f"Error sending email to {recipient_name}:{recipient_email}")

@@ -62,7 +62,7 @@ def qdes_datasets_not_updated(context, config={}):
 
         # Load and cache point of contacts.
         contact_point_pos = extras.get('contact_point', None)
-        if not contact_point_pos in point_of_contacts:
+        if contact_point_pos not in point_of_contacts:
             point_of_contacts[contact_point_pos] = qdes_logic_helpers \
                 .get_point_of_contact(context, contact_point_pos) if contact_point_pos else {}
 
@@ -113,7 +113,7 @@ def qdes_datasets_with_empty_recommended_fields(context, config={}):
             if package.get('state') == 'active':
                 # Load and cache point of contacts.
                 contact_point_pos = package.get('contact_point', None)
-                if not contact_point_pos in point_of_contacts:
+                if contact_point_pos not in point_of_contacts:
                     point_of_contacts[contact_point_pos] = qdes_logic_helpers \
                         .get_point_of_contact(context, contact_point_pos) if contact_point_pos else {}
 
@@ -217,7 +217,7 @@ def qdes_datasets_with_invalid_urls(context, config={}):
         contact_point_pos = entity_dict.get('contact_point', None) \
             if invalid_uri.get('type') == 'dataset' \
             else parent_entity_dict.get('contact_point', None)
-        if not contact_point_pos in point_of_contacts:
+        if contact_point_pos not in point_of_contacts:
             point_of_contacts[contact_point_pos] = qdes_logic_helpers \
                 .get_point_of_contact(context, contact_point_pos) if contact_point_pos else {}
 
@@ -257,7 +257,7 @@ def qdes_datasets_not_reviewed(context, config):
 
         # Load and cache point of contacts.
         contact_point_pos = extras.get('contact_point', None)
-        if not contact_point_pos in point_of_contacts:
+        if contact_point_pos not in point_of_contacts:
             point_of_contacts[contact_point_pos] = qdes_logic_helpers \
                 .get_point_of_contact(context, contact_point_pos) if contact_point_pos else {}
 
