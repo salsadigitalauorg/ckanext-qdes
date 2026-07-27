@@ -133,7 +133,7 @@ def generate_reports():
 
 def mark_as_reviewed(datasets):
     try:
-        if datasets == None or len(datasets) == 0:
+        if datasets is None or len(datasets) == 0:
             return
         log.info(f'Starting to mark {len(datasets)} datasets as reviewed')
         site_user = get_action(u'get_site_user')({u'ignore_auth': True}, {})
@@ -242,6 +242,7 @@ def validate_datasets():
                     log.error(f'No contact point found for {contact_point}')
         except Exception as e:
             log.error(f"Error sending email to {contact_point}")
+            log.error(f"Error: {e}")
 
     # Send email to admin if there are validation errors
     if validation_errors:
@@ -257,3 +258,4 @@ def validate_datasets():
                 log.error('validation_error_recipient_email is not set')
         except Exception as e:
             log.error(f"Error sending email to {recipient_name}:{recipient_email}")
+            log.error(f"Error: {e}")
