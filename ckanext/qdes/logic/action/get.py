@@ -1,6 +1,5 @@
 import logging
 import ckan.logic as logic
-import ckan.authz as authz
 import ckan.plugins.toolkit as toolkit
 import ckanext.qdes.logic.helpers.report_helpers as qdes_logic_helpers
 import ckanext.scheming.helpers as scheming_helpers
@@ -12,19 +11,12 @@ from sqlalchemy import or_
 
 check_access = toolkit.check_access
 get_action = toolkit.get_action
-NotAuthorized = toolkit.NotAuthorized
 qdes_render_date_with_offset = helpers.qdes_render_date_with_offset
 log = logging.getLogger(__name__)
 
 
-def check_user_access_for_reports(context):
-    # Check if the user is a system administrator or has permission to create a dataset in any organisation
-    if not authz.is_sysadmin(context.get('user')) and not authz.has_user_permission_for_some_org(context.get('user'), 'create_dataset'):
-        raise NotAuthorized()
-
-
 def review_datasets(context, data_dict):
-    check_user_access_for_reports(context)
+    check_access('sysadmin', context)
 
     try:
         datasets = qdes_logic_helpers.qdes_get_list_of_datasets_not_reviewed()
