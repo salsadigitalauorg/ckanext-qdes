@@ -41,7 +41,7 @@ def qdes_datasets_not_updated(context, config={}):
     List of all datasets that have been created
     but have not been updated in 12 months.
     """
-    check_user_access_for_reports(context)
+    check_access('sysadmin', context)
 
     # Get org_id config.
     org_id = config.get('org_id', None)
@@ -84,7 +84,7 @@ def qdes_datasets_with_empty_recommended_fields(context, config={}):
     u"""
     List of all datasets that have no values against recommended metadata fields.
     """
-    check_user_access_for_reports(context)
+    check_access('sysadmin', context)
 
     # Get org_id config.
     org_id = config.get('org_id', None)
@@ -194,7 +194,7 @@ def qdes_datasets_not_reviewed(context, config):
     u"""
     List of all datasets with over 12 months review date.
     """
-    check_user_access_for_reports(context)
+    check_access('sysadmin', context)
 
     # Get org_id config.
     org_id = config.get('org_id', None)
