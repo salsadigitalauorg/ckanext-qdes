@@ -125,12 +125,25 @@ def qdes_review_due_date(review_date):
     return due_date.strftime('%Y-%m-%dT%H:%M:%S')
 
 
+def format_invalid_urls_for_csv(rows):
+    for row in rows:
+        invalid_urls = row.get('Invalid URLs')
+        if isinstance(invalid_urls, list):
+            lines = []
+            for item in invalid_urls:
+                field = item.get('field', '')
+                url = item.get('url', '')
+                lines.append(f'{field}: {url}')
+            row['Invalid URLs'] = '\n'.join(lines)
+
+
 def qdes_generate_csv(title, rows):
     u"""
     Create a csv file to ./tmp directory and return the filename.
     """
     filename = ''
     if rows:
+        format_invalid_urls_for_csv(rows)
         date = render_datetime(datetime.utcnow(), date_format='%Y-%m-%d')
         filename = 'audit-' + str(date) + '-' + title + '.csv'
 

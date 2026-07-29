@@ -84,7 +84,8 @@ def generate_reports():
     }
     csv_files = []
     for report in available_actions:
-        csv_file = helpers.qdes_generate_csv(available_actions.get(report), get_action(report)(context, {'org_id': None}))
+        rows = get_action(report)(context, {'org_id': None})
+        csv_file = helpers.qdes_generate_csv(available_actions.get(report), rows)
 
         if csv_file:
             csv_files.append(csv_file)
