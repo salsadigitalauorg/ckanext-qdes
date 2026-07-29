@@ -53,14 +53,14 @@ def ckan_worker_job_monitor():
 @click.command(u"validate-datasets")
 @click.pass_context
 def validate_datasets(ctx):
-    click.secho(f"Starting validating datasets", fg=u"green")
+    click.secho("Starting validating datasets", fg=u"green")
     try:
         flask_app = ctx.meta['flask_app']
         with flask_app.test_request_context():
             jobs.validate_datasets()
     except Exception as e:
         log.error(e)
-    click.secho(f"Finished validating datasets", fg=u"green")
+    click.secho("Finished validating datasets", fg=u"green")
 
 
 def get_commands():

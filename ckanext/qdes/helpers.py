@@ -52,7 +52,9 @@ def qdes_organization_list(user_id=None):
         if g.userobj.sysadmin:
             # In some cases, sysadmin can be deleted from organization, so get_groups will return []
             # but in this case, we need to query all of the organization available in the system.
-            organizations = Session.query(Group).filter(Group.is_organization == True).all()
+            # SQLAlchemy: '== True' on a mapped column is required to build IS TRUE/= true
+            # SQL, not a Python truthiness check. `is True` / bare truthiness do not work here.
+            organizations = Session.query(Group).filter(Group.is_organization == True).all()  # noqa: E712
         else:
             organizations = g.userobj.get_groups('organization')
 
@@ -280,7 +282,9 @@ def get_banner_image():
 def get_recently_created_datasets(limit=5):
     q = model.Session.query(model.Package)
     q = q.filter(model.Package.state == model.core.State.ACTIVE)
-    q = q.filter(model.Package.private == False)
+    # SQLAlchemy: '== False' on a mapped column is required to build IS FALSE/= false
+    # SQL, not a Python truthiness check. `not model.Package.private` does not work here.
+    q = q.filter(model.Package.private == False)  # noqa: E712
     q = q.order_by(model.Package.metadata_created.desc())
     q = q.limit(limit)
 
@@ -298,7 +302,9 @@ def get_most_popular_datasets(limit=5):
     q = q.join(TrackingSummary, TrackingSummary.package_id == model.Package.id)
     q = q.filter(TrackingSummary.package_id != '~~not~found~~')
     q = q.filter(model.Package.state == model.core.State.ACTIVE)
-    q = q.filter(model.Package.private == False)
+    # SQLAlchemy: '== False' on a mapped column is required to build IS FALSE/= false
+    # SQL, not a Python truthiness check. `not model.Package.private` does not work here.
+    q = q.filter(model.Package.private == False)  # noqa: E712
     q = q.order_by(TrackingSummary.tracking_date.desc())
     q = q.order_by(TrackingSummary.running_total.desc())
     q = q.limit(limit)

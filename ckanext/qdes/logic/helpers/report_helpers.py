@@ -48,7 +48,9 @@ def qdes_get_organization_list():
     """
     Return a list of
     """
-    return Session.query(Group).filter(Group.is_organization == True).all()
+    # SQLAlchemy: '== True' on a mapped column is required to build IS TRUE/= true
+    # SQL, not a Python truthiness check. `is True` / bare truthiness do not work here.
+    return Session.query(Group).filter(Group.is_organization == True).all()  # noqa: E712
 
 
 def qdes_get_organization_dict_by_id(id, organizations):
