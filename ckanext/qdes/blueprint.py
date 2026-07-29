@@ -41,10 +41,18 @@ def dashboard_review_datasets():
             if type(data['dataset']) is not list:
                 data['dataset'] = list([data['dataset']])
 
-            toolkit.enqueue_job(jobs.mark_as_reviewed, args=[data['dataset']], rq_kwargs={u'timeout': 3600}, title="Review Datasets")
+            # Only allow packages the current user can see on this page
+            # (sysadmin: all / org-filtered; admin/editor: their orgs + contact point).
+            allowed_ids = {pkg.id for pkg in helpers.qdes_review_datasets(org_id)}
+            datasets = [pkg_id for pkg_id in data['dataset'] if pkg_id in allowed_ids]
 
-            h.flash_success(
-                'This is a background process and can take several minutes. You can safely navigate away from this screen and check the status of the review process later.')
+            if not datasets:
+                h.flash_error('There are no datasets marked for review that you are allowed to update')
+            else:
+                toolkit.enqueue_job(jobs.mark_as_reviewed, args=[datasets], rq_kwargs={u'timeout': 3600}, title="Review Datasets")
+
+                h.flash_success(
+                    'This is a background process and can take several minutes. You can safely navigate away from this screen and check the status of the review process later.')
         else:
             h.flash_error('There are no datasets marked for review')
 
