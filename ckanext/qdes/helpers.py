@@ -52,7 +52,9 @@ def qdes_organization_list(user_id=None):
         if g.userobj.sysadmin:
             # In some cases, sysadmin can be deleted from organization, so get_groups will return []
             # but in this case, we need to query all of the organization available in the system.
-            organizations = Session.query(Group).filter(Group.is_organization == True).all()
+            # SQLAlchemy: '== True' on a mapped column is required to build IS TRUE/= true
+            # SQL, not a Python truthiness check. `is True` / bare truthiness do not work here.
+            organizations = Session.query(Group).filter(Group.is_organization == True).all()  # noqa: E712
         else:
             organizations = g.userobj.get_groups('organization')
 
@@ -123,12 +125,25 @@ def qdes_review_due_date(review_date):
     return due_date.strftime('%Y-%m-%dT%H:%M:%S')
 
 
+def format_invalid_urls_for_csv(rows):
+    for row in rows:
+        invalid_urls = row.get('Invalid URLs')
+        if isinstance(invalid_urls, list):
+            lines = []
+            for item in invalid_urls:
+                field = item.get('field', '')
+                url = item.get('url', '')
+                lines.append(f'{field}: {url}')
+            row['Invalid URLs'] = '\n'.join(lines)
+
+
 def qdes_generate_csv(title, rows):
     u"""
     Create a csv file to ./tmp directory and return the filename.
     """
     filename = ''
     if rows:
+        format_invalid_urls_for_csv(rows)
         date = render_datetime(datetime.utcnow(), date_format='%Y-%m-%d')
         filename = 'audit-' + str(date) + '-' + title + '.csv'
 
@@ -267,7 +282,9 @@ def get_banner_image():
 def get_recently_created_datasets(limit=5):
     q = model.Session.query(model.Package)
     q = q.filter(model.Package.state == model.core.State.ACTIVE)
-    q = q.filter(model.Package.private == False)
+    # SQLAlchemy: '== False' on a mapped column is required to build IS FALSE/= false
+    # SQL, not a Python truthiness check. `not model.Package.private` does not work here.
+    q = q.filter(model.Package.private == False)  # noqa: E712
     q = q.order_by(model.Package.metadata_created.desc())
     q = q.limit(limit)
 
@@ -285,7 +302,9 @@ def get_most_popular_datasets(limit=5):
     q = q.join(TrackingSummary, TrackingSummary.package_id == model.Package.id)
     q = q.filter(TrackingSummary.package_id != '~~not~found~~')
     q = q.filter(model.Package.state == model.core.State.ACTIVE)
-    q = q.filter(model.Package.private == False)
+    # SQLAlchemy: '== False' on a mapped column is required to build IS FALSE/= false
+    # SQL, not a Python truthiness check. `not model.Package.private` does not work here.
+    q = q.filter(model.Package.private == False)  # noqa: E712
     q = q.order_by(TrackingSummary.tracking_date.desc())
     q = q.order_by(TrackingSummary.running_total.desc())
     q = q.limit(limit)

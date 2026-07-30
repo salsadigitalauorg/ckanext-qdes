@@ -46,7 +46,7 @@ def api_token_create(original_action, context, data_dict):
 
     # You must be a sysadmin to create new activities. So we need to ignore auth check
     ignore_auth = context.get('ignore_auth', False)
-    if ignore_auth == False:
+    if not ignore_auth:
         context['ignore_auth'] = True
 
     # Create activity.
@@ -61,7 +61,7 @@ def api_token_create(original_action, context, data_dict):
     })
 
     # If original ignore_auth value was set to false lets set it back to false to go down the chain
-    if ignore_auth == False:
+    if not ignore_auth:
         context['ignore_auth'] = False
 
     return result

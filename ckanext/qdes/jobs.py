@@ -84,7 +84,8 @@ def generate_reports():
     }
     csv_files = []
     for report in available_actions:
-        csv_file = helpers.qdes_generate_csv(available_actions.get(report), get_action(report)(context, {'org_id': None}))
+        rows = get_action(report)(context, {'org_id': None})
+        csv_file = helpers.qdes_generate_csv(available_actions.get(report), rows)
 
         if csv_file:
             csv_files.append(csv_file)
@@ -133,7 +134,7 @@ def generate_reports():
 
 def mark_as_reviewed(datasets):
     try:
-        if datasets == None or len(datasets) == 0:
+        if datasets is None or len(datasets) == 0:
             return
         log.info(f'Starting to mark {len(datasets)} datasets as reviewed')
         site_user = get_action(u'get_site_user')({u'ignore_auth': True}, {})
@@ -146,7 +147,7 @@ def mark_as_reviewed(datasets):
             except Exception as e:
                 log.error(str(e))
         # Because we set defer_commit = True we need to make sure we commit all the updates to the model.repo
-        log.info(f'Committing updates to database')
+        log.info('Committing updates to database')
         model.repo.commit()
         log.info(f'Finished marking {len(datasets)} datasets as reviewed')
     except Exception as e:
@@ -157,11 +158,11 @@ def ckan_worker_job_monitor():
     monitor_url = os.environ.get('MONITOR_QDES_JOBWORKER')
     try:
         if monitor_url:
-            log.info(f'Sending notification for CKAN worker job monitor')
+            log.info('Sending notification for CKAN worker job monitor')
             requests.get(monitor_url, timeout=10)
-            log.info(f'Successfully sent notification for CKAN worker job monitor')
+            log.info('Successfully sent notification for CKAN worker job monitor')
         else:
-            log.error(f'The env variable MONITOR_QDES_JOBWORKER is not set for CKAN worker job monitor')
+            log.error('The env variable MONITOR_QDES_JOBWORKER is not set for CKAN worker job monitor')
     except requests.RequestException as e:
         log.error(f'Failed to send ckan worker job monitor notification to {monitor_url}')
         log.error(str(e))
@@ -242,6 +243,7 @@ def validate_datasets():
                     log.error(f'No contact point found for {contact_point}')
         except Exception as e:
             log.error(f"Error sending email to {contact_point}")
+            log.error(f"Error: {e}")
 
     # Send email to admin if there are validation errors
     if validation_errors:
@@ -254,6 +256,7 @@ def validate_datasets():
                 body_html = render('emails/body/validate_datasets.html', {'datasets': validation_errors})
                 mail_recipient(recipient_name, recipient_email, subject, body, body_html)
             else:
-                log.error(f'validation_error_recipient_email is not set')
+                log.error('validation_error_recipient_email is not set')
         except Exception as e:
             log.error(f"Error sending email to {recipient_name}:{recipient_email}")
+            log.error(f"Error: {e}")

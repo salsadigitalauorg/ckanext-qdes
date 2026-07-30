@@ -9,7 +9,6 @@ from ckanext.qdes import helpers
 from ckanext.qdes import constants
 from ckanext.qdes import jobs
 from flask import Blueprint
-from pprint import pformat
 
 clean_dict = logic.clean_dict
 tuplize_dict = logic.tuplize_dict
@@ -39,13 +38,21 @@ def dashboard_review_datasets():
         data = clean_dict(dict_fns.unflatten(tuplize_dict(parse_params(request.form))))
 
         if 'dataset' in data:
-            if not type(data['dataset']) is list:
+            if type(data['dataset']) is not list:
                 data['dataset'] = list([data['dataset']])
 
-            toolkit.enqueue_job(jobs.mark_as_reviewed, args=[data['dataset']], rq_kwargs={u'timeout': 3600}, title="Review Datasets")
+            # Only allow packages the current user can see on this page
+            # (sysadmin: all / org-filtered; admin/editor: their orgs + contact point).
+            allowed_ids = {pkg.id for pkg in helpers.qdes_review_datasets(org_id)}
+            datasets = [pkg_id for pkg_id in data['dataset'] if pkg_id in allowed_ids]
 
-            h.flash_success(
-                'This is a background process and can take several minutes. You can safely navigate away from this screen and check the status of the review process later.')
+            if not datasets:
+                h.flash_error('There are no datasets marked for review that you are allowed to update')
+            else:
+                toolkit.enqueue_job(jobs.mark_as_reviewed, args=[datasets], rq_kwargs={u'timeout': 3600}, title="Review Datasets")
+
+                h.flash_success(
+                    'This is a background process and can take several minutes. You can safely navigate away from this screen and check the status of the review process later.')
         else:
             h.flash_error('There are no datasets marked for review')
 
@@ -97,6 +104,10 @@ def dashboard_reports():
 
 
 def reports(type):
+    # Only sysadmin can access.
+    if not g.userobj.sysadmin:
+        abort(404, 'Not found')
+
     types = {
         'not-updated': 'not-updated',
         'not-reviewed': 'not-reviewed',
@@ -104,7 +115,7 @@ def reports(type):
         'incomplete-recommended': 'recommended',
     }
 
-    if not type in types:
+    if type not in types:
         abort(404, 'Not found')
 
     # Get the latest report directory.
