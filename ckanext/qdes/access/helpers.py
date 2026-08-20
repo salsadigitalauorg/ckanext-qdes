@@ -16,6 +16,35 @@ from ckan.plugins.toolkit import (
 
 log = logging.getLogger(__name__)
 
+# Fallback only - get_role_priority() derives this from CKAN so the two cannot
+# drift. Highest first.
+ROLE_PRIORITY = {
+    'admin': 3,
+    'editor': 2,
+    'member': 1,
+}
+
+
+def get_role_priority():
+    """Return a {role: priority} map for CKAN's organisation roles, highest wins.
+
+    Derived from `authz.ROLE_PERMISSIONS`, an OrderedDict declared
+    most-privileged first, so roles added by CKAN or a plugin rank
+    automatically.
+    """
+    try:
+        roles = list(authz.ROLE_PERMISSIONS)
+    except Exception:
+        log.warning('Could not read CKAN ROLE_PERMISSIONS, falling back to ROLE_PRIORITY', exc_info=True)
+        return dict(ROLE_PRIORITY)
+
+    if not roles:
+        log.warning('CKAN ROLE_PERMISSIONS is empty, falling back to ROLE_PRIORITY')
+        return dict(ROLE_PRIORITY)
+
+    # First declared is most privileged.
+    return {role: len(roles) - index for index, role in enumerate(roles)}
+
 
 def has_user_access_to_update_members_for_organisation(context, data_dict):
     group = logic_auth.get_group_object(context, data_dict)
@@ -63,13 +92,68 @@ def get_organisation_mapping():
         .filter(model.GroupExtra.key == 'ad_groups') \
         .filter(model.GroupExtra.state == 'active').all()
 
+    # Every mapping is collected, not overwritten: one AD group may grant roles
+    # in several organisations, and one organisation may be reached via several.
     organisation_mapping = {}
     for group_extra in group_extras:
         ad_groups = get_converter('json_or_string')(group_extra.value or [])
         for ad_group in ad_groups if isinstance(ad_groups, list) else []:
-            organisation_mapping[ad_group.get('group')] = {"org_id": group_extra.group_id, "role": ad_group.get('role')}
+            if not isinstance(ad_group, dict):
+                continue
+            group_name = ad_group.get('group')
+            if not group_name:
+                continue
+            organisation_mapping.setdefault(group_name, []).append(
+                {'org_id': group_extra.group_id, 'role': ad_group.get('role')})
 
     return organisation_mapping
+
+
+def select_highest_role(roles, org_id=None, valid_roles=None):
+    """Return the highest priority role from `roles`, or None.
+
+    The result is always one of the supplied `roles` - never an escalation
+    beyond what the user's AD groups assert. Roles CKAN rejects are discarded
+    so a mis-configured mapping cannot deny a valid lower role. Roles CKAN
+    accepts but cannot rank stay eligible, ranked last.
+
+    `valid_roles` may be supplied to avoid resolving CKAN's role list.
+    """
+    if valid_roles is None:
+        valid_roles = [role.get('value') for role in authz.roles_list()]
+
+    role_priority = get_role_priority()
+
+    # Below every known role, so an unrankable role only wins unopposed.
+    unranked_priority = min(role_priority.values()) - 1 if role_priority else 0
+
+    candidates = []
+    invalid_roles = []
+    unranked_roles = []
+    for role in roles or []:
+        if role not in valid_roles:
+            invalid_roles.append(role)
+            continue
+        if role not in role_priority:
+            unranked_roles.append(role)
+        candidates.append(role)
+
+    if invalid_roles:
+        log.warning('Ignoring role(s) {0} for organisation {1} - not a valid CKAN role'.format(invalid_roles, org_id))
+
+    if unranked_roles:
+        log.warning(
+            'Role(s) {0} for organisation {1} are valid CKAN roles with no known priority, '
+            'ranking them below all known roles'.format(unranked_roles, org_id)
+        )
+
+    if not candidates:
+        log.warning(
+            'No valid role could be selected for organisation {0} from roles {1}'.format(org_id, list(roles or []))
+        )
+        return None
+
+    return max(candidates, key=lambda role: role_priority.get(role, unranked_priority))
 
 
 def get_read_only_saml_groups():
@@ -100,24 +184,29 @@ def update_user_organisations(user, saml_groups):
 
     remove_user_from_all_organisations(context, user)
 
-    # Load organisation_mapping config from CKAN.INI which will be in JSON format
-    # The order of the organisation_mapping config values should be sorted with highest role priority mapping first
+    # Mappings live in each organisation's 'ad_groups' extra, not CKAN.INI.
     organisation_mapping = get_organisation_mapping()
     log.debug('Using organisation_mapping: {0}'.format(organisation_mapping))
 
     if isinstance(organisation_mapping, dict) and isinstance(saml_groups, list):
-        organisations_added = []
-        for org_map in organisation_mapping:
-            log.debug('Checking organisation_mapping: {0}'.format(org_map))
-            if org_map in saml_groups:
-                organisation = organisation_mapping[org_map]
-                log.debug('SAML group found in organisation_mapping: {0}'.format(organisation))
+        # Iterate the user's SAML groups, not the mapping, so the result does
+        # not depend on the order rows came back from the database.
+        candidate_roles = {}
+        matched_groups = {}
+        for saml_group in saml_groups:
+            for organisation in organisation_mapping.get(saml_group) or []:
                 org_id = organisation.get('org_id', None)
-                org_role = organisation.get('role', None)
-                if org_id not in organisations_added and add_organisation_member(context, user, org_id, org_role):
-                    # If adding organisation member was successful we add it to the list as only 1 (the highest) role is assigned per organisation
-                    log.debug('Member role "{0}" was successfully added to organisation "{1}"'.format(org_role, org_id))
-                    organisations_added.append(org_id)
+                if org_id is None:
+                    continue
+                candidate_roles.setdefault(org_id, []).append(organisation.get('role', None))
+                matched_groups.setdefault(org_id, []).append(saml_group)
+
+        # Assign a single role per organisation, taking the highest granted.
+        for org_id, roles in candidate_roles.items():
+            log.info('Organisation "{0}" matched AD group(s) {1} granting role(s) {2} for user "{3}"'.format(org_id, matched_groups.get(org_id), roles, user))
+            org_role = select_highest_role(roles, org_id)
+            if org_role and add_organisation_member(context, user, org_id, org_role):
+                log.info('Selected highest role "{0}" for user "{1}" in organisation "{2}"'.format(org_role, user, org_id))
 
 
 def remove_user_from_all_organisations(context, user):
