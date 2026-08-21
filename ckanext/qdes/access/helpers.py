@@ -160,6 +160,10 @@ def get_read_only_saml_groups():
     return aslist(config.get('ckanext.qdes_access.saml_read_only_group'))
 
 
+def get_sysadmin_saml_groups():
+    return aslist(config.get('ckanext.qdes_access.saml_sysadmin_group'))
+
+
 def saml_group_mapping_exist(saml_groups):
     organisation_mapping = get_organisation_mapping()
     read_only_saml_groups = get_read_only_saml_groups()
@@ -244,17 +248,19 @@ def add_organisation_member(context, user, org_id, role):
         return False
 
 
-def update_user_sysadmin_status(userobj, saml_sysadmin_group, groups):
+def update_user_sysadmin_status(userobj, saml_sysadmin_groups, groups):
     if not userobj:
         return
 
-    if userobj.sysadmin and saml_sysadmin_group not in groups:
-        log.debug(f'User {userobj.name} is not part of the {saml_sysadmin_group} group, removing sysadmin access')
+    is_sysadmin_group_member = any(saml_sysadmin_group in groups for saml_sysadmin_group in saml_sysadmin_groups)
+
+    if userobj.sysadmin and not is_sysadmin_group_member:
+        log.debug(f'User {userobj.name} is not part of any of {saml_sysadmin_groups}, removing sysadmin access')
         userobj.sysadmin = False
         model.Session.add(userobj)
         model.Session.commit()
-    elif not userobj.sysadmin and saml_sysadmin_group in groups:
-        log.debug(f'User {userobj.name} is part of the {saml_sysadmin_group} group, adding sysadmin access')
+    elif not userobj.sysadmin and is_sysadmin_group_member:
+        log.debug(f'User {userobj.name} is part of {saml_sysadmin_groups}, adding sysadmin access')
         # Sysadmin does not need to be a member of any organisation as they have access to all organisations
         remove_user_from_all_organisations(get_context_with_site_user(), userobj.name)
         userobj.sysadmin = True

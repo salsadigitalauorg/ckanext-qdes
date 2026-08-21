@@ -184,7 +184,7 @@ class TestUnchangedBehaviour(object):
         user = factories.User(password=TEST_PASSWORD)
         userobj = model.User.get(user['name'])
 
-        helpers.update_user_sysadmin_status(userobj, 'AD-SYSADMIN', ['AD-SYSADMIN'])
+        helpers.update_user_sysadmin_status(userobj, ['AD-SYSADMIN'], ['AD-SYSADMIN'])
 
         assert model.User.get(user['name']).sysadmin is True
 
@@ -192,6 +192,15 @@ class TestUnchangedBehaviour(object):
         user = factories.Sysadmin(password=TEST_PASSWORD)
         userobj = model.User.get(user['name'])
 
-        helpers.update_user_sysadmin_status(userobj, 'AD-SYSADMIN', ['AD-OTHER'])
+        helpers.update_user_sysadmin_status(userobj, ['AD-SYSADMIN'], ['AD-OTHER'])
 
         assert model.User.get(user['name']).sysadmin is False
+
+    def test_sysadmin_group_grants_sysadmin_matching_any_configured_value(self):
+        """Supports listing both a group name and its GUID, matching either."""
+        user = factories.User(password=TEST_PASSWORD)
+        userobj = model.User.get(user['name'])
+
+        helpers.update_user_sysadmin_status(userobj, ['AD-SYSADMIN', 'guid-1234'], ['guid-1234'])
+
+        assert model.User.get(user['name']).sysadmin is True
