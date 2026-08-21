@@ -62,7 +62,7 @@ class QdesAccessPlugin(plugins.SingletonPlugin):
 
     def after_saml2_login(self, resp, saml_attributes):
         saml_user_group = toolkit.config.get(u'ckanext.qdes_access.saml_user_group', None)
-        saml_sysadmin_group = toolkit.config.get(u'ckanext.qdes_access.saml_sysadmin_group', None)
+        saml_sysadmin_groups = helpers.get_sysadmin_saml_groups()
         # If saml_user_group is configured
         # user cannot login with out a successful SAML group mapping to either organisation_mapping or saml_sysadmin_group/read_only_saml_groups
         if saml_user_group:
@@ -71,7 +71,7 @@ class QdesAccessPlugin(plugins.SingletonPlugin):
             log.debug('SAML groups found: {}'.format(groups))
             # If saml group does not exist in config for organisation_mapping or saml_sysadmin_group/read_only_saml_groups, delete the user
             userobj = toolkit.g.userobj
-            helpers.update_user_sysadmin_status(userobj, saml_sysadmin_group, groups)
+            helpers.update_user_sysadmin_status(userobj, saml_sysadmin_groups, groups)
             if userobj.sysadmin:
                 return resp
             elif helpers.saml_group_mapping_exist(groups):
