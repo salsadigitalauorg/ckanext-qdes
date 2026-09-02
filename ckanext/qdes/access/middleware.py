@@ -18,10 +18,8 @@ def qdes_access_before_request():
             return_dict['error'] = {'__type': 'Authorization Error',
                                     'message': toolkit._('Access denied')}
             return_dict['success'] = False
-            toolkit.request.environ['__no_cache__'] = True
             return api._finish(403, return_dict, content_type='json')
         else:
             unauthenticated_redirect_endpoint = toolkit.config.get('ckanext.qdes_access.unauthenticated_redirect_endpoint')
             log.warning(f'Unauthenticated access to {toolkit.request.endpoint}. Redirecting to {unauthenticated_redirect_endpoint} page.')
-            toolkit.request.environ['__no_cache__'] = True
             return toolkit.redirect_to(unauthenticated_redirect_endpoint)
