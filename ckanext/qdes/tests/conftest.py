@@ -52,3 +52,45 @@ def clean_db(reset_db, migrate_db_for, with_plugins):
     # own migrations (permission_labels), without which any action that writes
     # an activity record fails.
     migrate_db_for('activity')
+
+
+@pytest.fixture
+def clean_index(reset_index):
+    """Clear the search index, refusing to touch the development site's documents.
+
+    Tests share the development Solr core. CKAN's `clean_index` deletes every
+    document for the configured `ckan.site_id`, which `ahoy test-setup` sets
+    to `ckan_test`.
+    """
+    from ckan.common import config
+
+    site_id = config.get('ckan.site_id') or ''
+    if 'test' not in site_id:
+        pytest.fail(
+            'Refusing to clear the search index for site_id "{0}": it is not a '
+            'test site and would delete the development index. Run with a ckan '
+            'ini whose ckan.site_id names a test site.'.format(site_id)
+        )
+    reset_index()
+
+
+@pytest.fixture
+def clean_redis(reset_redis):
+    """Empty Redis, refusing to touch the database the development site uses.
+
+    CKAN's `clean_redis` deletes every key in the configured Redis database.
+    Locally that is database 0, shared with the development site's sessions and
+    job queues, and the Lagoon image only provides one database. To clear test
+    jobs, call `reset_redis('ckan:ckan_test:*')` instead.
+    """
+    from urllib.parse import urlparse
+
+    from ckan.common import config
+
+    database = urlparse(config.get('ckan.redis.url') or '').path.strip('/') or '0'
+    if database == '0':
+        pytest.fail(
+            "Refusing to empty Redis database 0: the development site uses it. "
+            "Use reset_redis('ckan:ckan_test:*') to clear only test job queues."
+        )
+    reset_redis()
