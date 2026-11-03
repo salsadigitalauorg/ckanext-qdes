@@ -184,7 +184,16 @@ def ad_group_delete(id, group_type='organization', is_organization=True):
     return render(u'organization/ad_groups.html', extra_vars)
 
 
-qdes_access.add_url_rule(u'/service/login', view_func=ckan_view_user.login, methods=[u'GET', u'POST'])
+def service_login():
+    # CKAN skips CSRF for requests without a session unless the endpoint is
+    # user.login or user.register, so this alias has to check it itself.
+    if request.method == u'POST':
+        from ckan.config.middleware.flask_app import csrf
+        csrf.protect()
+    return ckan_view_user.login()
+
+
+qdes_access.add_url_rule(u'/service/login', u'login', view_func=service_login, methods=[u'GET', u'POST'])
 qdes_access.add_url_rule(u'/user/unauthorised', view_func=unauthorised)
 qdes_access.add_url_rule(u'/organization/ad_groups/<id>', view_func=ad_groups)
 qdes_access.add_url_rule(u'/organization/ad_group_new/<id>', view_func=ADsGroupView.as_view(str(u'ad_group_new')), methods=[u'GET', u'POST'])
